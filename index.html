@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>15 分鐘 Stroop 疲勞誘發作業</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="screen-start" class="screen active">
+      <div class="card">
+        <h1>15 分鐘 Stroop 疲勞誘發作業</h1>
+        <p class="note">
+          請使用桌上型或筆記型電腦，並切換為全螢幕模式。建議使用 Chrome 或 Edge。
+        </p>
+
+        <label>
+          受試者編號
+          <input id="participant-id" type="text" placeholder="例如 S01" autocomplete="off" />
+        </label>
+
+        <label>
+          實驗場次
+          <input id="session-id" type="text" value="1" autocomplete="off" />
+        </label>
+
+        <button id="btn-start-info">開始</button>
+      </div>
+    </section>
+
+    <section id="screen-vas-pre" class="screen">
+      <div class="card">
+        <h2>作業前疲勞程度</h2>
+        <p>請評估你目前的心理疲勞程度。</p>
+        <div class="vas-row">
+          <span>0<br><small>完全不疲勞</small></span>
+          <input id="vas-pre" type="range" min="0" max="10" step="0.1" value="5" />
+          <span>10<br><small>極度疲勞</small></span>
+        </div>
+        <div id="vas-pre-value" class="vas-value">5.0</div>
+        <button id="btn-vas-pre">確認</button>
+      </div>
+    </section>
+
+    <section id="screen-instructions" class="screen">
+      <div class="card">
+        <h2>作業說明</h2>
+        <p>請忽略文字內容，只判斷文字顯示的顏色。</p>
+        <div class="mapping-grid">
+          <div><span class="swatch red"></span>紅色：F</div>
+          <div><span class="swatch green"></span>綠色：G</div>
+          <div><span class="swatch blue"></span>藍色：J</div>
+          <div><span class="swatch yellow"></span>黃色：K</div>
+        </div>
+        <p>請盡可能快速且正確地作答。先進行練習，正式作業不顯示回饋。</p>
+        <button id="btn-practice">開始練習</button>
+      </div>
+    </section>
+
+    <section id="screen-task" class="screen">
+      <div class="task-header">
+        <div id="block-label">練習</div>
+        <div id="timer-label"></div>
+      </div>
+      <div id="fixation" class="fixation">+</div>
+      <div id="stimulus" class="stimulus"></div>
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <section id="screen-practice-end" class="screen">
+      <div class="card">
+        <h2>練習結束</h2>
+        <p>接下來進行 15 分鐘正式作業，正式作業中不顯示正誤回饋。</p>
+        <button id="btn-formal">開始正式作業</button>
+      </div>
+    </section>
+
+    <section id="screen-vas-post" class="screen">
+      <div class="card">
+        <h2>作業後疲勞程度</h2>
+        <p>請再次評估你目前的心理疲勞程度。</p>
+        <div class="vas-row">
+          <span>0<br><small>完全不疲勞</small></span>
+          <input id="vas-post" type="range" min="0" max="10" step="0.1" value="5" />
+          <span>10<br><small>極度疲勞</small></span>
+        </div>
+        <div id="vas-post-value" class="vas-value">5.0</div>
+        <button id="btn-vas-post">完成並下載資料</button>
+      </div>
+    </section>
+
+    <section id="screen-end" class="screen">
+      <div class="card">
+        <h2>本階段結束</h2>
+        <p id="summary-text"></p>
+        <button id="btn-download-again">再次下載 CSV</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
