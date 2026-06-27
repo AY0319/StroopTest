@@ -2,22 +2,21 @@
   "use strict";
 
   const CONFIG = {
-    practiceTrials: 16,
+    practiceTrials: 24,
     formalDurationMs: 15 * 60 * 1000,
-    stimulusDurationMs: 1200,
+    stimulusDurationMs: 1800,
     fixationDurationMs: 300,
     feedbackDurationMs: 500,
-    congruentRatio: 0.35
+    congruentRatio: 0.50
   };
 
   const COLORS = {
     "紅": { css: "#ff2020", key: "f" },
     "綠": { css: "#2ecc40", key: "g" },
-    "藍": { css: "#2997ff", key: "j" },
-    "黃": { css: "#ffd400", key: "k" }
+    "藍": { css: "#2997ff", key: "j" }
   };
 
-  const VALID_KEYS = ["f", "g", "j", "k"];
+  const VALID_KEYS = ["f", "g", "j"];
   const state = {
     participant: "",
     session: "1",

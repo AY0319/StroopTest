@@ -6,10 +6,11 @@
 
 - 受試者編號與場次輸入
 - 作業前疲勞 VAS
-- 16 題練習
+- 24 題練習
 - 15 分鐘正式 Stroop 作業
-- 35% congruent / 65% incongruent
-- F / G / J / K 鍵盤反應
+- 每題最長反應時間 1.8 秒
+- 50% congruent / 50% incongruent
+- F / G / J 鍵盤反應
 - 作業後疲勞 VAS
 - 自動產生並下載 CSV
 - 無伺服器、無資料上傳
