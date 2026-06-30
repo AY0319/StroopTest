@@ -342,7 +342,7 @@
         <li>每題先呈現注視十字 500 ms，再空白 200 ms。</li>
         <li>刺激最多呈現 1500 ms；作答後進入 1000–1200 ms 隨機空白間隔。</li>
         <li>設定時間一到會自動停止並下載 CSV。</li>
-        <li>CSV 會記錄每題自正式測驗開始後的累積時間與 5 分鐘區段。</li>
+        <li>CSV 會同時包含逐題資料、整體摘要、一致／不一致條件摘要，以及每 5 分鐘區段摘要。</li>
         <li>可直接點擊固定按鈕，亦可按 R／G／B／Y 鍵。</li>
         <li>同一位受試者整場必須固定使用同一種作答方式。</li>
       </ul>
@@ -412,7 +412,7 @@
   <section id="end-screen" class="screen">
     <div class="panel">
       <h1>測驗完成</h1>
-      <p>正式資料已整理完成，瀏覽器會自動下載 CSV。</p>
+      <p>正式資料已整理完成。CSV 同時包含逐題原始資料與常用統計摘要。</p>
 
       <div class="summary-grid">
         <div class="metric">
@@ -819,7 +819,7 @@
         : null;
       const timeBlock5Min = trialOnsetElapsedMs === null
         ? ""
-        : Math.min(4, Math.floor(trialOnsetElapsedMs / (5 * 60 * 1000)) + 1);
+        : Math.floor(trialOnsetElapsedMs / (5 * 60 * 1000)) + 1;
 
       dataRows.push({
         participant_id: participantId,
@@ -886,9 +886,49 @@
       return values.reduce((sum, value) => sum + value, 0) / values.length;
     }
 
-    function computeSummary() {
-      const testRows = dataRows.filter(row => row.phase === "test");
-      const correctRows = testRows.filter(row => row.correct && row.rt_ms !== "");
+    function median(values) {
+      if (!values.length) return null;
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0
+        ? (sorted[middle - 1] + sorted[middle]) / 2
+        : sorted[middle];
+    }
+
+    function sampleStandardDeviation(values) {
+      if (values.length < 2) return null;
+      const average = mean(values);
+      const variance = values.reduce((sum, value) => {
+        return sum + (value - average) ** 2;
+      }, 0) / (values.length - 1);
+      return Math.sqrt(variance);
+    }
+
+    function percentage(numerator, denominator) {
+      return denominator ? numerator / denominator * 100 : null;
+    }
+
+    function linearSlope(points) {
+      const valid = points.filter(point =>
+        Number.isFinite(point.x) && Number.isFinite(point.y)
+      );
+      if (valid.length < 2) return null;
+
+      const meanX = mean(valid.map(point => point.x));
+      const meanY = mean(valid.map(point => point.y));
+      const numerator = valid.reduce((sum, point) => {
+        return sum + (point.x - meanX) * (point.y - meanY);
+      }, 0);
+      const denominator = valid.reduce((sum, point) => {
+        return sum + (point.x - meanX) ** 2;
+      }, 0);
+
+      return denominator === 0 ? null : numerator / denominator;
+    }
+
+    function summarizeRows(rows) {
+      const correctRows = rows.filter(row => row.correct && row.rt_ms !== "");
+      const correctTimes = correctRows.map(row => Number(row.rt_ms));
       const congruentTimes = correctRows
         .filter(row => row.condition === "congruent")
         .map(row => Number(row.rt_ms));
@@ -896,24 +936,76 @@
         .filter(row => row.condition === "incongruent")
         .map(row => Number(row.rt_ms));
 
-      const accuracy = testRows.length
-        ? testRows.filter(row => row.correct).length / testRows.length * 100
-        : 0;
-
-      const meanAll = mean(correctRows.map(row => Number(row.rt_ms)));
+      const totalTrials = rows.length;
+      const correctCount = rows.filter(row => row.correct).length;
+      const timeoutCount = rows.filter(row => row.timeout).length;
+      const commissionErrorCount = rows.filter(row => !row.correct && !row.timeout).length;
+      const accuracyPct = percentage(correctCount, totalTrials);
+      const meanRt = mean(correctTimes);
+      const medianRt = median(correctTimes);
+      const sdRt = sampleStandardDeviation(correctTimes);
       const meanCongruent = mean(congruentTimes);
       const meanIncongruent = mean(incongruentTimes);
-      const stroopEffect = meanCongruent !== null && meanIncongruent !== null
-        ? meanIncongruent - meanCongruent
-        : null;
+      const medianCongruent = median(congruentTimes);
+      const medianIncongruent = median(incongruentTimes);
 
       return {
-        accuracy,
-        meanAll,
-        meanCongruent,
-        meanIncongruent,
-        stroopEffect,
-        timeoutCount: testRows.filter(row => row.timeout).length
+        total_trials: totalTrials,
+        correct_count: correctCount,
+        commission_error_count: commissionErrorCount,
+        timeout_count: timeoutCount,
+        accuracy_pct: accuracyPct,
+        commission_error_rate_pct: percentage(commissionErrorCount, totalTrials),
+        timeout_rate_pct: percentage(timeoutCount, totalTrials),
+        valid_correct_rt_count: correctTimes.length,
+        mean_rt_ms: meanRt,
+        median_rt_ms: medianRt,
+        sd_rt_ms: sdRt,
+        min_rt_ms: correctTimes.length ? Math.min(...correctTimes) : null,
+        max_rt_ms: correctTimes.length ? Math.max(...correctTimes) : null,
+        rt_cv_pct: meanRt && sdRt !== null ? sdRt / meanRt * 100 : null,
+        inverse_efficiency_ms: meanRt !== null && accuracyPct > 0
+          ? meanRt / (accuracyPct / 100)
+          : null,
+        congruent_mean_rt_ms: meanCongruent,
+        incongruent_mean_rt_ms: meanIncongruent,
+        stroop_effect_mean_ms: meanCongruent !== null && meanIncongruent !== null
+          ? meanIncongruent - meanCongruent
+          : null,
+        congruent_median_rt_ms: medianCongruent,
+        incongruent_median_rt_ms: medianIncongruent,
+        stroop_effect_median_ms: medianCongruent !== null && medianIncongruent !== null
+          ? medianIncongruent - medianCongruent
+          : null
+      };
+    }
+
+    function getFiveMinuteBlockSummaries(testRows) {
+      const blockNumbers = [...new Set(
+        testRows
+          .map(row => Number(row.time_block_5min))
+          .filter(Number.isFinite)
+      )].sort((a, b) => a - b);
+
+      return blockNumbers.map(blockNumber => ({
+        blockNumber,
+        metrics: summarizeRows(
+          testRows.filter(row => Number(row.time_block_5min) === blockNumber)
+        )
+      }));
+    }
+
+    function computeSummary() {
+      const testRows = dataRows.filter(row => row.phase === "test");
+      const overall = summarizeRows(testRows);
+
+      return {
+        accuracy: overall.accuracy_pct ?? 0,
+        meanAll: overall.mean_rt_ms,
+        meanCongruent: overall.congruent_mean_rt_ms,
+        meanIncongruent: overall.incongruent_mean_rt_ms,
+        stroopEffect: overall.stroop_effect_mean_ms,
+        timeoutCount: overall.timeout_count
       };
     }
 
@@ -932,14 +1024,138 @@
       return `"${String(value ?? "").replaceAll('"', '""')}"`;
     }
 
+    function roundForCsv(value, digits = 3) {
+      if (value === null || value === undefined || value === "") return "";
+      if (!Number.isFinite(Number(value))) return value;
+      return Number(Number(value).toFixed(digits));
+    }
+
+    function createAnalysisRows() {
+      const testRows = dataRows.filter(row => row.phase === "test");
+      const blockSummaries = getFiveMinuteBlockSummaries(testRows);
+      const firstBlock = blockSummaries[0]?.metrics ?? null;
+      const lastBlock = blockSummaries.at(-1)?.metrics ?? null;
+
+      const rtSlope = linearSlope(blockSummaries.map(item => ({
+        x: item.blockNumber,
+        y: item.metrics.mean_rt_ms
+      })));
+      const accuracySlope = linearSlope(blockSummaries.map(item => ({
+        x: item.blockNumber,
+        y: item.metrics.accuracy_pct
+      })));
+
+      const commonMetadata = {
+        participant_id: participantId,
+        session_start: sessionStartIso,
+        configured_test_duration_min: currentTestDurationMs / 60000,
+        fixation_ms: CONFIG.fixationMs,
+        pre_stimulus_blank_ms: CONFIG.preStimulusBlankMs,
+        response_deadline_ms: CONFIG.responseDeadlineMs,
+        rsi_min_ms: CONFIG.rsiMinMs,
+        rsi_max_ms: CONFIG.rsiMaxMs
+      };
+
+      const trialRows = dataRows.map((row, index) => ({
+        row_type: "trial",
+        ...commonMetadata,
+        phase: row.phase,
+        global_trial_index: index + 1,
+        trial_index: row.trial_index,
+        trial_onset_iso: row.trial_onset_iso,
+        trial_onset_elapsed_ms: row.trial_onset_elapsed_ms,
+        elapsed_minute: row.trial_onset_elapsed_ms === ""
+          ? ""
+          : roundForCsv(Number(row.trial_onset_elapsed_ms) / 60000, 4),
+        response_elapsed_ms: row.response_elapsed_ms,
+        time_block_5min: row.time_block_5min,
+        condition: row.condition,
+        word_zh: row.word_zh,
+        word_en: row.word_en,
+        word_code: row.word_code,
+        ink_zh: row.ink_zh,
+        ink_en: row.ink_en,
+        ink_code: row.ink_code,
+        correct_key: row.correct_key,
+        response_zh: row.response_zh,
+        response_en: row.response_en,
+        response_key: row.response_key,
+        correct: row.correct,
+        correct_numeric: row.correct ? 1 : 0,
+        rt_ms: row.rt_ms,
+        valid_correct_rt: row.correct && row.rt_ms !== "" ? 1 : 0,
+        timeout: row.timeout,
+        error_type: row.timeout ? "omission_timeout" : row.correct ? "correct" : "commission_error",
+        input_method: row.input_method
+      }));
+
+      function makeSummaryRow(scope, value, metrics, extra = {}) {
+        return {
+          row_type: "summary",
+          ...commonMetadata,
+          summary_scope: scope,
+          summary_value: value,
+          ...Object.fromEntries(
+            Object.entries(metrics).map(([key, metricValue]) => [key, roundForCsv(metricValue)])
+          ),
+          ...extra,
+          analysis_note: "RT statistics use correct non-timeout trials only; sd_rt_ms is sample SD; inverse_efficiency_ms = mean RT / accuracy proportion."
+        };
+      }
+
+      const overallMetrics = summarizeRows(testRows);
+      const summaryRows = [
+        makeSummaryRow("overall", "all_test_trials", overallMetrics, {
+          rt_slope_ms_per_5min_block: roundForCsv(rtSlope),
+          accuracy_slope_pct_per_5min_block: roundForCsv(accuracySlope),
+          first_last_mean_rt_change_ms: firstBlock && lastBlock
+            ? roundForCsv(lastBlock.mean_rt_ms - firstBlock.mean_rt_ms)
+            : "",
+          first_last_accuracy_change_pct: firstBlock && lastBlock
+            ? roundForCsv(lastBlock.accuracy_pct - firstBlock.accuracy_pct)
+            : ""
+        }),
+        makeSummaryRow(
+          "condition",
+          "congruent",
+          summarizeRows(testRows.filter(row => row.condition === "congruent"))
+        ),
+        makeSummaryRow(
+          "condition",
+          "incongruent",
+          summarizeRows(testRows.filter(row => row.condition === "incongruent"))
+        ),
+        ...blockSummaries.map(item => makeSummaryRow(
+          "time_block_5min",
+          String(item.blockNumber),
+          item.metrics,
+          {
+            block_start_min: (item.blockNumber - 1) * 5,
+            block_end_min: item.blockNumber * 5
+          }
+        ))
+      ];
+
+      return [...trialRows, ...summaryRows];
+    }
+
     function createCsv() {
       const columns = [
+        "row_type",
         "participant_id",
         "session_start",
+        "configured_test_duration_min",
+        "fixation_ms",
+        "pre_stimulus_blank_ms",
+        "response_deadline_ms",
+        "rsi_min_ms",
+        "rsi_max_ms",
         "phase",
+        "global_trial_index",
         "trial_index",
         "trial_onset_iso",
         "trial_onset_elapsed_ms",
+        "elapsed_minute",
         "response_elapsed_ms",
         "time_block_5min",
         "condition",
@@ -954,14 +1170,48 @@
         "response_en",
         "response_key",
         "correct",
+        "correct_numeric",
         "rt_ms",
+        "valid_correct_rt",
         "timeout",
-        "input_method"
+        "error_type",
+        "input_method",
+        "summary_scope",
+        "summary_value",
+        "block_start_min",
+        "block_end_min",
+        "total_trials",
+        "correct_count",
+        "commission_error_count",
+        "timeout_count",
+        "accuracy_pct",
+        "commission_error_rate_pct",
+        "timeout_rate_pct",
+        "valid_correct_rt_count",
+        "mean_rt_ms",
+        "median_rt_ms",
+        "sd_rt_ms",
+        "min_rt_ms",
+        "max_rt_ms",
+        "rt_cv_pct",
+        "inverse_efficiency_ms",
+        "congruent_mean_rt_ms",
+        "incongruent_mean_rt_ms",
+        "stroop_effect_mean_ms",
+        "congruent_median_rt_ms",
+        "incongruent_median_rt_ms",
+        "stroop_effect_median_ms",
+        "rt_slope_ms_per_5min_block",
+        "accuracy_slope_pct_per_5min_block",
+        "first_last_mean_rt_change_ms",
+        "first_last_accuracy_change_pct",
+        "analysis_note"
       ];
 
+      const analysisRows = createAnalysisRows();
       const rows = [
         columns.map(csvEscape).join(","),
-        ...dataRows.map(row => columns.map(column => csvEscape(row[column])).join(","))
+        ...analysisRows.map(row => columns.map(column => csvEscape(row[column])).join(","))
       ];
 
       return "\uFEFF" + rows.join("\r\n");
@@ -975,7 +1225,7 @@
       const timestamp = new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
 
       link.href = url;
-      link.download = `stroop_zh_RGBY_${safeId}_${timestamp}.csv`;
+      link.download = `stroop_zh_RGBY_analysis_${safeId}_${timestamp}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
