@@ -185,6 +185,15 @@
       user-select: none;
     }
 
+    #countdown {
+      display: none;
+      font-size: clamp(90px, 16vw, 180px);
+      font-weight: 900;
+      line-height: 1;
+      user-select: none;
+    }
+
+
     #stimulus {
       min-height: 1.2em;
       display: grid;
@@ -368,6 +377,7 @@
     </div>
 
     <div class="task-main">
+      <div id="countdown" aria-live="assertive"></div>
       <div id="fixation" aria-hidden="true">+</div>
       <div id="stimulus" aria-live="polite"></div>
     </div>
@@ -481,6 +491,7 @@
     const testDurationInput = document.getElementById("test-duration-minutes");
     const phaseLabel = document.getElementById("phase-label");
     const progressLabel = document.getElementById("progress-label");
+    const countdown = document.getElementById("countdown");
     const fixation = document.getElementById("fixation");
     const stimulus = document.getElementById("stimulus");
     const practiceFeedback = document.getElementById("practice-feedback");
@@ -653,10 +664,36 @@
     }
 
     function clearTaskDisplay() {
+      countdown.style.display = "none";
+      countdown.textContent = "";
       fixation.style.display = "none";
       stimulus.textContent = "";
       stimulus.style.color = "";
       practiceFeedback.style.display = "none";
+    }
+
+    function runStartCountdown(onComplete) {
+      clearTaskDisplay();
+      setButtonsEnabled(false);
+      countdown.style.display = "block";
+
+      let remaining = 3;
+      countdown.textContent = String(remaining);
+
+      const tick = () => {
+        remaining -= 1;
+
+        if (remaining > 0) {
+          countdown.textContent = String(remaining);
+          scheduleTimeout(tick, 1000);
+        } else {
+          countdown.style.display = "none";
+          countdown.textContent = "";
+          onComplete();
+        }
+      };
+
+      scheduleTimeout(tick, 1000);
     }
 
     function startPhase(nextPhase) {
@@ -666,14 +703,20 @@
       clearPendingTimeouts();
       trials = phase === "practice" ? buildPracticeTrials() : buildTestTrials();
       if (phase === "test") {
-        testStartTime = performance.now();
-        phaseTimer = scheduleTimeout(() => {
-          finishExperiment();
-        }, currentTestDurationMs);
+        testStartTime = null;
       }
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
+      progressLabel.textContent = "";
       showScreen("task");
-      beginTrial();
+      runStartCountdown(() => {
+        if (phase === "test") {
+          testStartTime = performance.now();
+          phaseTimer = scheduleTimeout(() => {
+            finishExperiment();
+          }, currentTestDurationMs);
+        }
+        beginTrial();
+      });
     }
 
     function beginTrial() {
