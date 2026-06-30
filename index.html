@@ -312,9 +312,10 @@
       </div>
 
       <ul>
-        <li>8 題練習，接著 80 題正式測驗。</li>
+        <li>8 題練習，接著 20 分鐘正式測驗。</li>
         <li>每題先呈現注視十字 500 ms，再空白 200 ms。</li>
         <li>刺激最多呈現 1500 ms；作答後進入 1000–1200 ms 隨機空白間隔。</li>
+        <li>20 分鐘一到自動停止並下載 CSV。</li>
         <li>可直接點擊固定按鈕，亦可按 R／G／B／Y 鍵。</li>
         <li>同一位受試者整場必須固定使用同一種作答方式。</li>
       </ul>
@@ -444,6 +445,7 @@
     const CONFIG = Object.freeze({
       practiceTrials: 8,
       testTrials: 80,
+      testDurationMs: 20 * 60 * 1000,
       fixationMs: 500,
       preStimulusBlankMs: 200,
       responseDeadlineMs: 1500,
@@ -485,7 +487,28 @@
     let awaitingResponse = false;
     let stimulusOnset = 0;
     let responseTimer = null;
+    let phaseTimer = null;
+    let pendingTimeouts = [];
+    let testStartTime = null;
     let dataRows = [];
+
+    function scheduleTimeout(callback, delay) {
+      const timeoutId = window.setTimeout(callback, delay);
+      pendingTimeouts.push(timeoutId);
+      return timeoutId;
+    }
+
+    function clearPendingTimeouts() {
+      pendingTimeouts.forEach(id => window.clearTimeout(id));
+      pendingTimeouts = [];
+    }
+
+    function clearPhaseTimer() {
+      if (phaseTimer !== null) {
+        window.clearTimeout(phaseTimer);
+        phaseTimer = null;
+      }
+    }
 
     function showScreen(name) {
       Object.values(screens).forEach(screen => screen.classList.remove("active"));
@@ -629,7 +652,15 @@
     function startPhase(nextPhase) {
       phase = nextPhase;
       trialIndex = 0;
+      clearPhaseTimer();
+      clearPendingTimeouts();
       trials = phase === "practice" ? buildPracticeTrials() : buildTestTrials();
+      if (phase === "test") {
+        testStartTime = performance.now();
+        phaseTimer = scheduleTimeout(() => {
+          finishExperiment();
+        }, CONFIG.testDurationMs);
+      }
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
       showScreen("task");
       beginTrial();
@@ -639,10 +670,16 @@
       if (trialIndex >= trials.length) {
         if (phase === "practice") {
           showScreen("transition");
+          return;
+        }
+
+        const elapsed = performance.now() - testStartTime;
+        if (elapsed < CONFIG.testDurationMs) {
+          trials = trials.concat(buildTestTrials());
         } else {
           finishExperiment();
+          return;
         }
-        return;
       }
 
       progressLabel.textContent = `${trialIndex + 1} / ${trials.length}`;
@@ -651,10 +688,10 @@
 
       fixation.style.display = "block";
 
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         fixation.style.display = "none";
 
-        window.setTimeout(() => {
+        scheduleTimeout(() => {
           presentStimulus();
         }, CONFIG.preStimulusBlankMs);
       }, CONFIG.fixationMs);
@@ -670,7 +707,7 @@
       stimulusOnset = performance.now();
       awaitingResponse = true;
 
-      responseTimer = window.setTimeout(() => {
+      responseTimer = scheduleTimeout(() => {
         submitResponse(null, "timeout");
       }, CONFIG.responseDeadlineMs);
     }
@@ -679,7 +716,10 @@
       if (!awaitingResponse) return;
 
       awaitingResponse = false;
-      window.clearTimeout(responseTimer);
+      if (responseTimer !== null) {
+        window.clearTimeout(responseTimer);
+        responseTimer = null;
+      }
       setButtonsEnabled(false);
 
       const trial = trials[trialIndex];
@@ -717,7 +757,7 @@
         practiceFeedback.textContent = timedOut ? "請加快" : correct ? "正確" : "錯誤";
         practiceFeedback.style.display = "flex";
 
-        window.setTimeout(() => {
+        scheduleTimeout(() => {
           practiceFeedback.style.display = "none";
           startResponseStimulusInterval();
         }, CONFIG.practiceFeedbackMs);
@@ -729,7 +769,7 @@
     function startResponseStimulusInterval() {
       const interval = randomInteger(CONFIG.rsiMinMs, CONFIG.rsiMaxMs);
 
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         trialIndex += 1;
         beginTrial();
       }, interval);
@@ -845,10 +885,12 @@
     function finishExperiment() {
       awaitingResponse = false;
       setButtonsEnabled(false);
+      clearPhaseTimer();
+      clearPendingTimeouts();
       displaySummary(computeSummary());
       showScreen("end");
 
-      window.setTimeout(downloadCsv, 300);
+      scheduleTimeout(downloadCsv, 300);
     }
 
     async function startExperiment() {
