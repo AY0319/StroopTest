@@ -672,19 +672,31 @@
       practiceFeedback.style.display = "none";
     }
 
-    function runStartCountdown(onComplete) {
+    function runStartCountdown(phaseName, onComplete) {
       clearTaskDisplay();
       setButtonsEnabled(false);
       countdown.style.display = "block";
 
       let remaining = 3;
-      countdown.textContent = String(remaining);
+
+      const renderCountdown = () => {
+        countdown.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:clamp(24px,4vw,42px);margin-bottom:22px;">
+              ${phaseName}即將開始
+            </div>
+            <div>${remaining}</div>
+          </div>
+        `;
+      };
+
+      renderCountdown();
 
       const tick = () => {
         remaining -= 1;
 
         if (remaining > 0) {
-          countdown.textContent = String(remaining);
+          renderCountdown();
           scheduleTimeout(tick, 1000);
         } else {
           countdown.style.display = "none";
@@ -708,7 +720,9 @@
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
       progressLabel.textContent = "";
       showScreen("task");
-      runStartCountdown(() => {
+      const countdownPhaseName = phase === "practice" ? "練習" : "正式測驗";
+
+      runStartCountdown(countdownPhaseName, () => {
         if (phase === "test") {
           testStartTime = performance.now();
           phaseTimer = scheduleTimeout(() => {
