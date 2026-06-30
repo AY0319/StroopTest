@@ -1,639 +1,886 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>15 分鐘 Stroop 疲勞誘發作業</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中文四色 Stroop（R/G/B/Y）</title>
   <style>
-* {
-  box-sizing: border-box;
-}
+    :root {
+      --bg: #050505;
+      --panel: #151515;
+      --text: #f4f4f4;
+      --muted: #b8b8b8;
+      --border: #3b3b3b;
+      --red: #ff4545;
+      --green: #19d36b;
+      --blue: #35a7ff;
+      --yellow: #f1df32;
+    }
 
-body {
-  margin: 0;
-  background: #111;
-  color: #fff;
-  font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
-}
+    * { box-sizing: border-box; }
 
-button,
-input {
-  font: inherit;
-}
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      overflow: hidden;
+    }
 
-.screen {
-  display: none;
-  min-height: 100vh;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
+    button, input { font: inherit; }
 
-.screen.active {
-  display: flex;
-}
+    .screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
 
-.card {
-  width: min(760px, 92vw);
-  background: #1d1d1d;
-  border: 1px solid #444;
-  border-radius: 14px;
-  padding: 32px;
-  text-align: center;
-}
+    .screen.active { display: flex; }
 
-h1, h2 {
-  margin-top: 0;
-}
+    .panel {
+      width: min(900px, 96vw);
+      max-height: 94vh;
+      overflow-y: auto;
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
+    }
 
-.note {
-  color: #ccc;
-}
+    h1, h2 {
+      margin: 0 0 18px;
+      line-height: 1.35;
+    }
 
-label {
-  display: block;
-  text-align: left;
-  margin: 18px 0;
-}
+    p, li {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.72;
+    }
 
-input[type="text"] {
-  width: 100%;
-  margin-top: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #666;
-  background: #0f0f0f;
-  color: #fff;
-}
+    strong { color: var(--text); }
 
-button {
-  margin-top: 18px;
-  padding: 12px 24px;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 700;
-}
+    .mapping {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(125px, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
 
-.mapping-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin: 24px 0;
-  text-align: left;
-}
+    .mapping-item {
+      padding: 14px 8px;
+      border: 2px solid currentColor;
+      border-radius: 12px;
+      background: #090909;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+    }
 
-.swatch {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
-  vertical-align: middle;
-  border: 1px solid #fff;
-}
+    .mapping-item small {
+      display: block;
+      margin-top: 5px;
+      color: #cfcfcf;
+      font-size: 14px;
+      font-weight: 650;
+    }
 
-.red { background: #ff2020; }
-.green { background: #2ecc40; }
-.blue { background: #2997ff; }
-.yellow { background: #ffd400; }
+    .red { color: var(--red); }
+    .green { color: var(--green); }
+    .blue { color: var(--blue); }
+    .yellow { color: var(--yellow); }
 
-.vas-row {
-  display: grid;
-  grid-template-columns: 110px 1fr 110px;
-  gap: 16px;
-  align-items: center;
-}
+    .notice {
+      margin: 18px 0;
+      padding: 11px 15px;
+      border-left: 4px solid var(--yellow);
+      background: rgba(241, 223, 50, 0.07);
+      color: var(--text);
+      line-height: 1.65;
+    }
 
-input[type="range"] {
-  width: 100%;
-}
+    .field {
+      display: grid;
+      gap: 8px;
+      margin: 22px 0;
+    }
 
-.vas-value {
-  font-size: 2rem;
-  margin-top: 18px;
-}
+    .field label {
+      color: var(--text);
+      font-weight: 800;
+    }
 
-#screen-task {
-  position: relative;
-  flex-direction: column;
-}
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: #090909;
+      color: var(--text);
+    }
 
-.task-header {
-  position: fixed;
-  top: 18px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 24px;
-  color: #bbb;
-}
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
 
-.fixation,
-.stimulus,
-.feedback {
-  position: absolute;
-  text-align: center;
-}
+    .primary, .secondary {
+      padding: 13px 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 850;
+    }
 
-.fixation {
-  font-size: 4rem;
-}
+    .primary {
+      border: 0;
+      background: #fff;
+      color: #000;
+    }
 
-.stimulus {
-  font-size: clamp(72px, 12vw, 150px);
-  font-weight: 800;
-}
+    .secondary {
+      border: 1px solid #4b4b4b;
+      background: #292929;
+      color: #fff;
+    }
 
-.feedback {
-  margin-top: 220px;
-  font-size: 2rem;
-}
+    #task-screen {
+      position: relative;
+      flex-direction: column;
+      justify-content: stretch;
+      padding: 0;
+    }
 
-@media (max-width: 600px) {
-  .mapping-grid {
-    grid-template-columns: 1fr;
-  }
+    .task-topbar {
+      width: 100%;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: #919191;
+      font-size: 14px;
+      user-select: none;
+    }
 
-  .vas-row {
-    grid-template-columns: 80px 1fr 80px;
-    font-size: 0.9rem;
-  }
-}
+    .task-main {
+      display: grid;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      place-items: center;
+    }
 
-</style>
+    #fixation {
+      font-size: 80px;
+      font-weight: 300;
+      user-select: none;
+    }
+
+    #stimulus {
+      min-height: 1.2em;
+      display: grid;
+      place-items: center;
+      font-size: clamp(80px, 13vw, 150px);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      user-select: none;
+    }
+
+    #practice-feedback {
+      position: absolute;
+      inset: 52px 0 180px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: clamp(48px, 8vw, 88px);
+      font-weight: 900;
+      text-shadow: 0 3px 18px #000;
+      pointer-events: none;
+    }
+
+    .response-area {
+      width: min(920px, 96vw);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 0 auto;
+      padding: 0 0 22px;
+    }
+
+    .color-btn {
+      min-height: 118px;
+      border: 3px solid currentColor;
+      border-radius: 16px;
+      background: #090909;
+      color: inherit;
+      cursor: pointer;
+      font-size: clamp(23px, 3vw, 34px);
+      font-weight: 900;
+      touch-action: manipulation;
+    }
+
+    .color-btn small {
+      display: block;
+      margin-top: 5px;
+      color: #c8c8c8;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .color-btn:not(:disabled):hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .color-btn:disabled {
+      cursor: default;
+      opacity: 0.42;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .metric {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0b0b0b;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metric-value {
+      margin-top: 5px;
+      color: var(--text);
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .references {
+      margin-top: 25px;
+      color: #7f7f7f;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 720px) {
+      .panel { padding: 22px; }
+      .mapping { grid-template-columns: repeat(2, 1fr); }
+      .response-area {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 12px 12px;
+      }
+      .color-btn { min-height: 84px; }
+      #practice-feedback { inset: 52px 0 190px; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
+
 <body>
-  <main id="app">
-    <section id="screen-start" class="screen active">
-      <div class="card">
-        <h1>15 分鐘 Stroop 疲勞誘發作業</h1>
-        <p class="note">
-          請使用桌上型或筆記型電腦，並切換為全螢幕模式。建議使用 Chrome 或 Edge。
-        </p>
+  <section id="start-screen" class="screen active">
+    <div class="panel">
+      <h1>中文四色 Stroop</h1>
 
-        <label>
-          受試者編號
-          <input id="participant-id" type="text" placeholder="例如 S01" autocomplete="off" />
-        </label>
+      <p>
+        畫面會出現「紅、綠、藍、黃」其中一個中文字。
+        請<strong>忽略文字意思</strong>，只依照<strong>字體實際顏色</strong>作答。
+      </p>
 
-        <label>
-          實驗場次
-          <input id="session-id" type="text" value="1" autocomplete="off" />
-        </label>
-
-        <button id="btn-start-info">開始</button>
+      <div class="mapping">
+        <div class="mapping-item red">R＝紅<small>Red／R 鍵</small></div>
+        <div class="mapping-item green">G＝綠<small>Green／G 鍵</small></div>
+        <div class="mapping-item blue">B＝藍<small>Blue／B 鍵</small></div>
+        <div class="mapping-item yellow">Y＝黃<small>Yellow／Y 鍵</small></div>
       </div>
-    </section>
 
-    <section id="screen-vas-pre" class="screen">
-      <div class="card">
-        <h2>作業前疲勞程度</h2>
-        <p>請評估你目前的心理疲勞程度。</p>
-        <div class="vas-row">
-          <span>0<br><small>完全不疲勞</small></span>
-          <input id="vas-pre" type="range" min="0" max="10" step="0.1" value="5" />
-          <span>10<br><small>極度疲勞</small></span>
+      <ul>
+        <li>8 題練習，接著 80 題正式測驗。</li>
+        <li>每題先呈現注視十字 500 ms，再空白 200 ms。</li>
+        <li>刺激最多呈現 1500 ms；作答後進入 1000–1200 ms 隨機空白間隔。</li>
+        <li>可直接點擊固定按鈕，亦可按 R／G／B／Y 鍵。</li>
+        <li>同一位受試者整場必須固定使用同一種作答方式。</li>
+      </ul>
+
+      <div class="notice">
+        正式測驗不提供逐題正誤回饋，以避免回饋改變後續作答策略；練習階段會提供回饋。
+      </div>
+
+      <div class="field">
+        <label for="participant-id">受試者編號</label>
+        <input id="participant-id" type="text" maxlength="40" placeholder="例如：S01" autocomplete="off">
+      </div>
+
+      <div class="actions">
+        <button id="start-btn" class="primary">開始練習</button>
+      </div>
+
+      <div class="references">
+        設計依據：PsyToolkit 四色手動作答 Stroop（R/G/B/Y；8 題練習＋80 題正式）；
+        Ménétré &amp; Laganaro（2019）的 500 ms 注視、200 ms 空白、1500 ms 刺激與
+        1000–1200 ms 間隔；手動按鍵反應屬常見電腦化 Stroop 變體。
+      </div>
+    </div>
+  </section>
+
+  <section id="transition-screen" class="screen">
+    <div class="panel">
+      <h2>練習完成</h2>
+      <p>
+        接下來進入正式測驗。規則不變：
+        <strong>忽略文字內容，只判斷字體顏色。</strong>
+      </p>
+      <p>正式測驗不會顯示逐題正誤，請盡可能快速且正確地作答。</p>
+      <div class="actions">
+        <button id="test-btn" class="primary">開始正式測驗</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="task-screen" class="screen">
+    <div class="task-topbar">
+      <span id="phase-label">練習</span>
+      <span id="progress-label">0 / 0</span>
+    </div>
+
+    <div class="task-main">
+      <div id="fixation" aria-hidden="true">+</div>
+      <div id="stimulus" aria-live="polite"></div>
+    </div>
+
+    <div id="practice-feedback"></div>
+
+    <div class="response-area" aria-label="顏色作答按鈕">
+      <button class="color-btn red" data-color="red">R　紅<small>Red</small></button>
+      <button class="color-btn green" data-color="green">G　綠<small>Green</small></button>
+      <button class="color-btn blue" data-color="blue">B　藍<small>Blue</small></button>
+      <button class="color-btn yellow" data-color="yellow">Y　黃<small>Yellow</small></button>
+    </div>
+  </section>
+
+  <section id="end-screen" class="screen">
+    <div class="panel">
+      <h1>測驗完成</h1>
+      <p>正式資料已整理完成，瀏覽器會自動下載 CSV。</p>
+
+      <div class="summary-grid">
+        <div class="metric">
+          <div class="metric-label">正式測驗正確率</div>
+          <div id="accuracy-value" class="metric-value">—</div>
         </div>
-        <div id="vas-pre-value" class="vas-value">5.0</div>
-        <button id="btn-vas-pre">確認</button>
-      </div>
-    </section>
-
-    <section id="screen-instructions" class="screen">
-      <div class="card">
-        <h2>作業說明</h2>
-        <p>請忽略文字內容，只判斷文字顯示的顏色。</p>
-        <div class="mapping-grid">
-          <div><span class="swatch red"></span>紅色：F</div>
-          <div><span class="swatch green"></span>綠色：G</div>
-          <div><span class="swatch blue"></span>藍色：J</div>
+        <div class="metric">
+          <div class="metric-label">正確反應平均時間</div>
+          <div id="mean-value" class="metric-value">—</div>
         </div>
-        <p>請盡可能快速且正確地作答。先進行練習，正式作業不顯示回饋。</p>
-        <button id="btn-practice">開始練習</button>
-      </div>
-    </section>
-
-    <section id="screen-task" class="screen">
-      <div class="task-header">
-        <div id="block-label">練習</div>
-        <div id="timer-label"></div>
-      </div>
-      <div id="fixation" class="fixation">+</div>
-      <div id="stimulus" class="stimulus"></div>
-      <div id="feedback" class="feedback"></div>
-    </section>
-
-    <section id="screen-practice-end" class="screen">
-      <div class="card">
-        <h2>練習結束</h2>
-        <p>接下來進行 15 分鐘正式作業，正式作業中不顯示正誤回饋。</p>
-        <button id="btn-formal">開始正式作業</button>
-      </div>
-    </section>
-
-    <section id="screen-vas-post" class="screen">
-      <div class="card">
-        <h2>作業後疲勞程度</h2>
-        <p>請再次評估你目前的心理疲勞程度。</p>
-        <div class="vas-row">
-          <span>0<br><small>完全不疲勞</small></span>
-          <input id="vas-post" type="range" min="0" max="10" step="0.1" value="5" />
-          <span>10<br><small>極度疲勞</small></span>
+        <div class="metric">
+          <div class="metric-label">一致題平均時間</div>
+          <div id="congruent-value" class="metric-value">—</div>
         </div>
-        <div id="vas-post-value" class="vas-value">5.0</div>
-        <button id="btn-vas-post">完成並下載資料</button>
+        <div class="metric">
+          <div class="metric-label">不一致題平均時間</div>
+          <div id="incongruent-value" class="metric-value">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Stroop 干擾量</div>
+          <div id="stroop-value" class="metric-value">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">逾時題數</div>
+          <div id="timeout-value" class="metric-value">—</div>
+        </div>
       </div>
-    </section>
 
-    <section id="screen-end" class="screen">
-      <div class="card">
-        <h2>本階段結束</h2>
-        <p id="summary-text"></p>
-        <button id="btn-download-again">再次下載 CSV</button>
+      <div class="actions">
+        <button id="download-btn" class="primary">下載 CSV</button>
+        <button id="restart-btn" class="secondary">重新開始</button>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <script>
-(() => {
-  "use strict";
+    "use strict";
 
-  const CONFIG = {
-    practiceTrials: 24,
-    formalDurationMs: 15 * 60 * 1000,
-    stimulusDurationMs: 1800,
-    fixationDurationMs: 300,
-    feedbackDurationMs: 500,
-    congruentRatio: 0.50
-  };
+    /*
+      Literature-anchored Chinese four-color Stroop.
 
-  const COLORS = {
-    "紅": { css: "#ff2020", key: "f" },
-    "綠": { css: "#2ecc40", key: "g" },
-    "藍": { css: "#2997ff", key: "j" }
-  };
+      Structure and manual mapping:
+      - PsyToolkit Stroop: red, green, blue, yellow; R/G/B/Y keys.
+      - 8 practice trials followed by 80 formal trials.
 
-  const VALID_KEYS = ["f", "g", "j"];
-  const state = {
-    participant: "",
-    session: "1",
-    vasPre: null,
-    vasPost: null,
-    trials: [],
-    currentBlock: null,
-    formalStartTime: null,
-    csvText: ""
-  };
+      Timing:
+      - 500 ms fixation
+      - 200 ms blank
+      - stimulus up to 1500 ms
+      - 1000–1200 ms variable blank response-stimulus interval
 
-  const screens = [...document.querySelectorAll(".screen")];
-  const el = id => document.getElementById(id);
+      The timing is based on:
+      Ménétré, E., & Laganaro, M. (2019).
+      Attentional Reorientation and Inhibition Adjustment in a Verbal Stroop Task.
+      Frontiers in Psychology, 10, 2028.
+      https://doi.org/10.3389/fpsyg.2019.02028
 
-  function showScreen(id) {
-    screens.forEach(screen => screen.classList.remove("active"));
-    el(id).classList.add("active");
-  }
+      Manual response is an established computerized Stroop variant.
+      This implementation is an adaptation rather than an exact replication
+      of one single published experiment.
+    */
 
-  function escapeCsv(value) {
-    const text = String(value ?? "");
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-  }
-
-  function nowIso() {
-    return new Date().toISOString();
-  }
-
-  function randomChoice(array) {
-    return array[Math.floor(Math.random() * array.length)];
-  }
-
-  function createTrial(condition) {
-    const names = Object.keys(COLORS);
-    const ink = randomChoice(names);
-    let word = ink;
-
-    if (condition === "incongruent") {
-      word = randomChoice(names.filter(name => name !== ink));
-    }
-
-    return {
-      condition,
-      word,
-      ink,
-      correctKey: COLORS[ink].key
-    };
-  }
-
-  function createPracticeTrials() {
-    const list = [];
-    for (let i = 0; i < CONFIG.practiceTrials; i++) {
-      list.push(createTrial(i % 2 === 0 ? "congruent" : "incongruent"));
-    }
-    return list.sort(() => Math.random() - 0.5);
-  }
-
-  function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  function requestFullscreen() {
-    const root = document.documentElement;
-    if (root.requestFullscreen) {
-      root.requestFullscreen().catch(() => {});
-    }
-  }
-
-  async function runTrial(trial, trialIndex, blockName, showFeedback) {
-    const fixation = el("fixation");
-    const stimulus = el("stimulus");
-    const feedback = el("feedback");
-
-    fixation.textContent = "+";
-    fixation.style.display = "block";
-    stimulus.textContent = "";
-    feedback.textContent = "";
-
-    await delay(CONFIG.fixationDurationMs);
-
-    fixation.style.display = "none";
-    stimulus.textContent = trial.word;
-    stimulus.style.color = COLORS[trial.ink].css;
-
-    const onsetPerf = performance.now();
-    const onsetIso = nowIso();
-
-    let responseKey = "";
-    let reactionTimeMs = "";
-    let responseStatus = "omission";
-    let correct = 0;
-    let settled = false;
-
-    const responsePromise = new Promise(resolve => {
-      const handler = event => {
-        const key = event.key.toLowerCase();
-
-        if (key === "escape") {
-          window.removeEventListener("keydown", handler);
-          settled = true;
-          resolve({ aborted: true });
-          return;
-        }
-
-        if (!VALID_KEYS.includes(key) || settled) return;
-
-        settled = true;
-        responseKey = key;
-        reactionTimeMs = Math.round((performance.now() - onsetPerf) * 10) / 10;
-        correct = Number(key === trial.correctKey);
-        responseStatus = correct ? "correct" : "incorrect";
-        window.removeEventListener("keydown", handler);
-        resolve({ aborted: false });
-      };
-
-      window.addEventListener("keydown", handler);
-
-      setTimeout(() => {
-        if (!settled) {
-          settled = true;
-          window.removeEventListener("keydown", handler);
-          resolve({ aborted: false });
-        }
-      }, CONFIG.stimulusDurationMs);
+    const CONFIG = Object.freeze({
+      practiceTrials: 8,
+      testTrials: 80,
+      fixationMs: 500,
+      preStimulusBlankMs: 200,
+      responseDeadlineMs: 1500,
+      practiceFeedbackMs: 500,
+      rsiMinMs: 1000,
+      rsiMaxMs: 1200
     });
 
-    const result = await responsePromise;
-
-    if (result.aborted) {
-      throw new Error("Experiment aborted");
-    }
-
-    const elapsed = performance.now() - onsetPerf;
-    if (elapsed < CONFIG.stimulusDurationMs) {
-      await delay(CONFIG.stimulusDurationMs - elapsed);
-    }
-
-    stimulus.textContent = "";
-
-    if (showFeedback) {
-      feedback.textContent =
-        responseStatus === "correct" ? "正確" :
-        responseStatus === "incorrect" ? "錯誤" : "未作答";
-      await delay(CONFIG.feedbackDurationMs);
-      feedback.textContent = "";
-    }
-
-    const record = {
-      participant: state.participant,
-      session: state.session,
-      block: blockName,
-      trialIndex,
-      condition: trial.condition,
-      word: trial.word,
-      inkColor: trial.ink,
-      correctKey: trial.correctKey,
-      responseKey,
-      reactionTimeMs,
-      correct,
-      responseStatus,
-      stimulusOnsetIso: onsetIso,
-      formalElapsedMs: blockName === "formal"
-        ? Math.round(performance.now() - state.formalStartTime)
-        : ""
-    };
-
-    state.trials.push(record);
-  }
-
-  async function runPractice() {
-    showScreen("screen-task");
-    state.currentBlock = "practice";
-    el("block-label").textContent = "練習";
-    el("timer-label").textContent = "";
-
-    const trials = createPracticeTrials();
-
-    try {
-      for (let i = 0; i < trials.length; i++) {
-        await runTrial(trials[i], i + 1, "practice", true);
-      }
-      showScreen("screen-practice-end");
-    } catch {
-      alert("實驗已中止。");
-      location.reload();
-    }
-  }
-
-  async function runFormal() {
-    showScreen("screen-task");
-    state.currentBlock = "formal";
-    state.formalStartTime = performance.now();
-    el("block-label").textContent = "正式作業";
-
-    let trialIndex = 0;
-    let timerId = null;
-
-    const updateTimer = () => {
-      const remaining = Math.max(
-        0,
-        CONFIG.formalDurationMs - (performance.now() - state.formalStartTime)
-      );
-      const totalSeconds = Math.ceil(remaining / 1000);
-      const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-      const sec = String(totalSeconds % 60).padStart(2, "0");
-      el("timer-label").textContent = `${min}:${sec}`;
-    };
-
-    updateTimer();
-    timerId = setInterval(updateTimer, 250);
-
-    try {
-      while (performance.now() - state.formalStartTime < CONFIG.formalDurationMs) {
-        trialIndex += 1;
-        const condition = Math.random() < CONFIG.congruentRatio
-          ? "congruent"
-          : "incongruent";
-
-        await runTrial(createTrial(condition), trialIndex, "formal", false);
-      }
-
-      clearInterval(timerId);
-      el("timer-label").textContent = "00:00";
-      showScreen("screen-vas-post");
-    } catch {
-      clearInterval(timerId);
-      alert("實驗已中止。");
-      location.reload();
-    }
-  }
-
-  function buildCsv() {
-    const headers = [
-      "participant",
-      "session",
-      "vas_pre",
-      "vas_post",
-      "vas_change",
-      "block",
-      "trial_index",
-      "condition",
-      "word",
-      "ink_color",
-      "correct_key",
-      "response_key",
-      "reaction_time_ms",
-      "correct",
-      "response_status",
-      "stimulus_onset_iso",
-      "formal_elapsed_ms"
-    ];
-
-    const rows = state.trials.map(row => [
-      row.participant,
-      row.session,
-      state.vasPre,
-      state.vasPost,
-      Math.round((state.vasPost - state.vasPre) * 10) / 10,
-      row.block,
-      row.trialIndex,
-      row.condition,
-      row.word,
-      row.inkColor,
-      row.correctKey,
-      row.responseKey,
-      row.reactionTimeMs,
-      row.correct,
-      row.responseStatus,
-      row.stimulusOnsetIso,
-      row.formalElapsedMs
+    const COLORS = Object.freeze([
+      { id: "red", zh: "紅", en: "Red", key: "r", hex: "#ff4545" },
+      { id: "green", zh: "綠", en: "Green", key: "g", hex: "#19d36b" },
+      { id: "blue", zh: "藍", en: "Blue", key: "b", hex: "#35a7ff" },
+      { id: "yellow", zh: "黃", en: "Yellow", key: "y", hex: "#f1df32" }
     ]);
 
-    return [
-      headers.map(escapeCsv).join(","),
-      ...rows.map(row => row.map(escapeCsv).join(","))
-    ].join("\n");
-  }
+    const colorById = Object.fromEntries(COLORS.map(color => [color.id, color]));
+    const colorByKey = Object.fromEntries(COLORS.map(color => [color.key, color.id]));
 
-  function downloadCsv() {
-    state.csvText = buildCsv();
-    const bom = "\uFEFF";
-    const blob = new Blob([bom + state.csvText], {
-      type: "text/csv;charset=utf-8"
+    const screens = {
+      start: document.getElementById("start-screen"),
+      transition: document.getElementById("transition-screen"),
+      task: document.getElementById("task-screen"),
+      end: document.getElementById("end-screen")
+    };
+
+    const participantInput = document.getElementById("participant-id");
+    const phaseLabel = document.getElementById("phase-label");
+    const progressLabel = document.getElementById("progress-label");
+    const fixation = document.getElementById("fixation");
+    const stimulus = document.getElementById("stimulus");
+    const practiceFeedback = document.getElementById("practice-feedback");
+    const responseButtons = [...document.querySelectorAll(".color-btn")];
+
+    let participantId = "";
+    let sessionStartIso = "";
+    let phase = "practice";
+    let trials = [];
+    let trialIndex = 0;
+    let awaitingResponse = false;
+    let stimulusOnset = 0;
+    let responseTimer = null;
+    let dataRows = [];
+
+    function showScreen(name) {
+      Object.values(screens).forEach(screen => screen.classList.remove("active"));
+      screens[name].classList.add("active");
+    }
+
+    function sanitizeId(value) {
+      return value.trim().replace(/[^\p{L}\p{N}_-]+/gu, "_").slice(0, 40);
+    }
+
+    function fallbackId() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return `P_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    }
+
+    function shuffle(items) {
+      const result = [...items];
+      for (let index = result.length - 1; index > 0; index--) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+      }
+      return result;
+    }
+
+    function randomInteger(minimum, maximum) {
+      return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+    }
+
+    function makeTrial(word, ink, condition) {
+      return {
+        word,
+        ink,
+        condition,
+        correctResponse: ink
+      };
+    }
+
+    function sequenceIsAcceptable(sequence) {
+      let sameInkRun = 1;
+      let sameConditionRun = 1;
+
+      for (let index = 1; index < sequence.length; index++) {
+        const previous = sequence[index - 1];
+        const current = sequence[index];
+
+        if (previous.word === current.word && previous.ink === current.ink) {
+          return false;
+        }
+
+        if (previous.ink === current.ink) {
+          sameInkRun += 1;
+          if (sameInkRun > 3) return false;
+        } else {
+          sameInkRun = 1;
+        }
+
+        if (previous.condition === current.condition) {
+          sameConditionRun += 1;
+          if (sameConditionRun > 4) return false;
+        } else {
+          sameConditionRun = 1;
+        }
+      }
+
+      return true;
+    }
+
+    function constrainedShuffle(items) {
+      for (let attempt = 0; attempt < 1000; attempt++) {
+        const candidate = shuffle(items);
+        if (sequenceIsAcceptable(candidate)) return candidate;
+      }
+      return shuffle(items);
+    }
+
+    function buildPracticeTrials() {
+      const result = [];
+
+      // Four congruent trials: one per color.
+      for (const color of COLORS) {
+        result.push(makeTrial(color.id, color.id, "congruent"));
+      }
+
+      // Four incongruent trials forming a balanced cycle.
+      result.push(makeTrial("red", "green", "incongruent"));
+      result.push(makeTrial("green", "blue", "incongruent"));
+      result.push(makeTrial("blue", "yellow", "incongruent"));
+      result.push(makeTrial("yellow", "red", "incongruent"));
+
+      return constrainedShuffle(result);
+    }
+
+    function buildTestTrials() {
+      const result = [];
+
+      // 40 congruent trials: each color is the correct response 10 times.
+      for (const color of COLORS) {
+        for (let repeat = 0; repeat < 10; repeat++) {
+          result.push(makeTrial(color.id, color.id, "congruent"));
+        }
+      }
+
+      /*
+        40 incongruent trials:
+        - all 12 possible word–ink mismatches occur three times = 36
+        - four additional trials form a derangement cycle
+        This keeps total word frequency and correct-response frequency balanced.
+      */
+      for (const word of COLORS) {
+        for (const ink of COLORS) {
+          if (word.id !== ink.id) {
+            for (let repeat = 0; repeat < 3; repeat++) {
+              result.push(makeTrial(word.id, ink.id, "incongruent"));
+            }
+          }
+        }
+      }
+
+      result.push(makeTrial("red", "green", "incongruent"));
+      result.push(makeTrial("green", "blue", "incongruent"));
+      result.push(makeTrial("blue", "yellow", "incongruent"));
+      result.push(makeTrial("yellow", "red", "incongruent"));
+
+      return constrainedShuffle(result);
+    }
+
+    function setButtonsEnabled(enabled) {
+      responseButtons.forEach(button => {
+        button.disabled = !enabled;
+      });
+    }
+
+    function clearTaskDisplay() {
+      fixation.style.display = "none";
+      stimulus.textContent = "";
+      stimulus.style.color = "";
+      practiceFeedback.style.display = "none";
+    }
+
+    function startPhase(nextPhase) {
+      phase = nextPhase;
+      trialIndex = 0;
+      trials = phase === "practice" ? buildPracticeTrials() : buildTestTrials();
+      phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
+      showScreen("task");
+      beginTrial();
+    }
+
+    function beginTrial() {
+      if (trialIndex >= trials.length) {
+        if (phase === "practice") {
+          showScreen("transition");
+        } else {
+          finishExperiment();
+        }
+        return;
+      }
+
+      progressLabel.textContent = `${trialIndex + 1} / ${trials.length}`;
+      clearTaskDisplay();
+      setButtonsEnabled(false);
+
+      fixation.style.display = "block";
+
+      window.setTimeout(() => {
+        fixation.style.display = "none";
+
+        window.setTimeout(() => {
+          presentStimulus();
+        }, CONFIG.preStimulusBlankMs);
+      }, CONFIG.fixationMs);
+    }
+
+    function presentStimulus() {
+      const trial = trials[trialIndex];
+
+      stimulus.textContent = colorById[trial.word].zh;
+      stimulus.style.color = colorById[trial.ink].hex;
+      setButtonsEnabled(true);
+
+      stimulusOnset = performance.now();
+      awaitingResponse = true;
+
+      responseTimer = window.setTimeout(() => {
+        submitResponse(null, "timeout");
+      }, CONFIG.responseDeadlineMs);
+    }
+
+    function submitResponse(responseColor, inputMethod) {
+      if (!awaitingResponse) return;
+
+      awaitingResponse = false;
+      window.clearTimeout(responseTimer);
+      setButtonsEnabled(false);
+
+      const trial = trials[trialIndex];
+      const reactionTime = responseColor === null
+        ? null
+        : Math.round(performance.now() - stimulusOnset);
+      const correct = responseColor === trial.correctResponse;
+      const timedOut = responseColor === null;
+
+      dataRows.push({
+        participant_id: participantId,
+        session_start: sessionStartIso,
+        phase,
+        trial_index: trialIndex + 1,
+        condition: trial.condition,
+        word_zh: colorById[trial.word].zh,
+        word_en: colorById[trial.word].en,
+        word_code: trial.word,
+        ink_zh: colorById[trial.ink].zh,
+        ink_en: colorById[trial.ink].en,
+        ink_code: trial.ink,
+        correct_key: colorById[trial.correctResponse].key.toUpperCase(),
+        response_zh: responseColor ? colorById[responseColor].zh : "",
+        response_en: responseColor ? colorById[responseColor].en : "",
+        response_key: responseColor ? colorById[responseColor].key.toUpperCase() : "",
+        correct,
+        rt_ms: reactionTime ?? "",
+        timeout: timedOut,
+        input_method: inputMethod
+      });
+
+      stimulus.textContent = "";
+
+      if (phase === "practice") {
+        practiceFeedback.textContent = timedOut ? "請加快" : correct ? "正確" : "錯誤";
+        practiceFeedback.style.display = "flex";
+
+        window.setTimeout(() => {
+          practiceFeedback.style.display = "none";
+          startResponseStimulusInterval();
+        }, CONFIG.practiceFeedbackMs);
+      } else {
+        startResponseStimulusInterval();
+      }
+    }
+
+    function startResponseStimulusInterval() {
+      const interval = randomInteger(CONFIG.rsiMinMs, CONFIG.rsiMaxMs);
+
+      window.setTimeout(() => {
+        trialIndex += 1;
+        beginTrial();
+      }, interval);
+    }
+
+    function handleKeyboard(event) {
+      if (!screens.task.classList.contains("active") || !awaitingResponse) return;
+
+      const color = colorByKey[event.key.toLowerCase()];
+      if (!color) return;
+
+      event.preventDefault();
+      submitResponse(color, "keyboard");
+    }
+
+    function mean(values) {
+      if (!values.length) return null;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function computeSummary() {
+      const testRows = dataRows.filter(row => row.phase === "test");
+      const correctRows = testRows.filter(row => row.correct && row.rt_ms !== "");
+      const congruentTimes = correctRows
+        .filter(row => row.condition === "congruent")
+        .map(row => Number(row.rt_ms));
+      const incongruentTimes = correctRows
+        .filter(row => row.condition === "incongruent")
+        .map(row => Number(row.rt_ms));
+
+      const accuracy = testRows.length
+        ? testRows.filter(row => row.correct).length / testRows.length * 100
+        : 0;
+
+      const meanAll = mean(correctRows.map(row => Number(row.rt_ms)));
+      const meanCongruent = mean(congruentTimes);
+      const meanIncongruent = mean(incongruentTimes);
+      const stroopEffect = meanCongruent !== null && meanIncongruent !== null
+        ? meanIncongruent - meanCongruent
+        : null;
+
+      return {
+        accuracy,
+        meanAll,
+        meanCongruent,
+        meanIncongruent,
+        stroopEffect,
+        timeoutCount: testRows.filter(row => row.timeout).length
+      };
+    }
+
+    function displaySummary(summary) {
+      const formatMs = value => value === null ? "—" : `${Math.round(value)} ms`;
+
+      document.getElementById("accuracy-value").textContent = `${summary.accuracy.toFixed(1)}%`;
+      document.getElementById("mean-value").textContent = formatMs(summary.meanAll);
+      document.getElementById("congruent-value").textContent = formatMs(summary.meanCongruent);
+      document.getElementById("incongruent-value").textContent = formatMs(summary.meanIncongruent);
+      document.getElementById("stroop-value").textContent = formatMs(summary.stroopEffect);
+      document.getElementById("timeout-value").textContent = String(summary.timeoutCount);
+    }
+
+    function csvEscape(value) {
+      return `"${String(value ?? "").replaceAll('"', '""')}"`;
+    }
+
+    function createCsv() {
+      const columns = [
+        "participant_id",
+        "session_start",
+        "phase",
+        "trial_index",
+        "condition",
+        "word_zh",
+        "word_en",
+        "word_code",
+        "ink_zh",
+        "ink_en",
+        "ink_code",
+        "correct_key",
+        "response_zh",
+        "response_en",
+        "response_key",
+        "correct",
+        "rt_ms",
+        "timeout",
+        "input_method"
+      ];
+
+      const rows = [
+        columns.map(csvEscape).join(","),
+        ...dataRows.map(row => columns.map(column => csvEscape(row[column])).join(","))
+      ];
+
+      return "\uFEFF" + rows.join("\r\n");
+    }
+
+    function downloadCsv() {
+      const blob = new Blob([createCsv()], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const safeId = sanitizeId(participantId) || "participant";
+      const timestamp = new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
+
+      link.href = url;
+      link.download = `stroop_zh_RGBY_${safeId}_${timestamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function finishExperiment() {
+      awaitingResponse = false;
+      setButtonsEnabled(false);
+      displaySummary(computeSummary());
+      showScreen("end");
+
+      window.setTimeout(downloadCsv, 300);
+    }
+
+    async function startExperiment() {
+      participantId = sanitizeId(participantInput.value) || fallbackId();
+      participantInput.value = participantId;
+      sessionStartIso = new Date().toISOString();
+      dataRows = [];
+
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (_) {
+        // Full-screen permission is optional.
+      }
+
+      startPhase("practice");
+    }
+
+    responseButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        submitResponse(button.dataset.color, "mouse_or_touch");
+      });
     });
 
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-");
+    document.getElementById("start-btn").addEventListener("click", startExperiment);
+    document.getElementById("test-btn").addEventListener("click", () => startPhase("test"));
+    document.getElementById("download-btn").addEventListener("click", downloadCsv);
+    document.getElementById("restart-btn").addEventListener("click", () => window.location.reload());
+    document.addEventListener("keydown", handleKeyboard);
 
-    const filename =
-      `${state.participant || "unknown"}_session-${state.session}_stroop_${timestamp}.csv`;
-
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  el("vas-pre").addEventListener("input", event => {
-    el("vas-pre-value").textContent = Number(event.target.value).toFixed(1);
-  });
-
-  el("vas-post").addEventListener("input", event => {
-    el("vas-post-value").textContent = Number(event.target.value).toFixed(1);
-  });
-
-  el("btn-start-info").addEventListener("click", () => {
-    const participant = el("participant-id").value.trim();
-    const session = el("session-id").value.trim() || "1";
-
-    if (!participant) {
-      alert("請輸入受試者編號。");
-      return;
-    }
-
-    state.participant = participant;
-    state.session = session;
-    requestFullscreen();
-    showScreen("screen-vas-pre");
-  });
-
-  el("btn-vas-pre").addEventListener("click", () => {
-    state.vasPre = Number(el("vas-pre").value);
-    showScreen("screen-instructions");
-  });
-
-  el("btn-practice").addEventListener("click", runPractice);
-  el("btn-formal").addEventListener("click", runFormal);
-
-  el("btn-vas-post").addEventListener("click", () => {
-    state.vasPost = Number(el("vas-post").value);
-    downloadCsv();
-
-    const formalTrials = state.trials.filter(row => row.block === "formal");
-    const correctCount = formalTrials.reduce((sum, row) => sum + row.correct, 0);
-    const accuracy = formalTrials.length
-      ? (correctCount / formalTrials.length * 100).toFixed(1)
-      : "0.0";
-
-    el("summary-text").textContent =
-      `資料已下載。正式作業共 ${formalTrials.length} 題，正確率 ${accuracy}%，疲勞 VAS 變化為 ${(state.vasPost - state.vasPre).toFixed(1)}。`;
-
-    showScreen("screen-end");
-  });
-
-  el("btn-download-again").addEventListener("click", downloadCsv);
-
-  window.addEventListener("beforeunload", event => {
-    if (state.currentBlock === "formal") {
-      event.preventDefault();
-      event.returnValue = "";
-    }
-  });
-})();
-
-</script>
+    setButtonsEnabled(false);
+  </script>
 </body>
 </html>
