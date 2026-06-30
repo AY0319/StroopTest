@@ -312,10 +312,11 @@
       </div>
 
       <ul>
-        <li>8 題練習，接著 20 分鐘正式測驗。</li>
+        <li>8 題練習，接著依上方設定時間進行正式測驗。</li>
         <li>每題先呈現注視十字 500 ms，再空白 200 ms。</li>
         <li>刺激最多呈現 1500 ms；作答後進入 1000–1200 ms 隨機空白間隔。</li>
-        <li>20 分鐘一到自動停止並下載 CSV。</li>
+        <li>設定時間一到會自動停止並下載 CSV。</li>
+        <li>CSV 會記錄每題自正式測驗開始後的累積時間與 5 分鐘區段。</li>
         <li>可直接點擊固定按鈕，亦可按 R／G／B／Y 鍵。</li>
         <li>同一位受試者整場必須固定使用同一種作答方式。</li>
       </ul>
@@ -327,6 +328,11 @@
       <div class="field">
         <label for="participant-id">受試者編號</label>
         <input id="participant-id" type="text" maxlength="40" placeholder="例如：S01" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="test-duration-minutes">正式測驗時間（分鐘）</label>
+        <input id="test-duration-minutes" type="number" min="1" max="120" step="1" value="20">
       </div>
 
       <div class="actions">
@@ -472,6 +478,7 @@
     };
 
     const participantInput = document.getElementById("participant-id");
+    const testDurationInput = document.getElementById("test-duration-minutes");
     const phaseLabel = document.getElementById("phase-label");
     const progressLabel = document.getElementById("progress-label");
     const fixation = document.getElementById("fixation");
@@ -486,10 +493,13 @@
     let trialIndex = 0;
     let awaitingResponse = false;
     let stimulusOnset = 0;
+    let trialOnsetIso = "";
+    let trialOnsetElapsedMs = null;
     let responseTimer = null;
     let phaseTimer = null;
     let pendingTimeouts = [];
     let testStartTime = null;
+    let currentTestDurationMs = CONFIG.testDurationMs;
     let dataRows = [];
 
     function scheduleTimeout(callback, delay) {
@@ -659,7 +669,7 @@
         testStartTime = performance.now();
         phaseTimer = scheduleTimeout(() => {
           finishExperiment();
-        }, CONFIG.testDurationMs);
+        }, currentTestDurationMs);
       }
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
       showScreen("task");
@@ -674,7 +684,7 @@
         }
 
         const elapsed = performance.now() - testStartTime;
-        if (elapsed < CONFIG.testDurationMs) {
+        if (elapsed < currentTestDurationMs) {
           trials = trials.concat(buildTestTrials());
         } else {
           finishExperiment();
@@ -705,6 +715,10 @@
       setButtonsEnabled(true);
 
       stimulusOnset = performance.now();
+      trialOnsetIso = new Date().toISOString();
+      trialOnsetElapsedMs = phase === "test" && testStartTime !== null
+        ? Math.round(stimulusOnset - testStartTime)
+        : null;
       awaitingResponse = true;
 
       responseTimer = scheduleTimeout(() => {
@@ -728,12 +742,22 @@
         : Math.round(performance.now() - stimulusOnset);
       const correct = responseColor === trial.correctResponse;
       const timedOut = responseColor === null;
+      const responseElapsedMs = phase === "test" && testStartTime !== null
+        ? Math.round(performance.now() - testStartTime)
+        : null;
+      const timeBlock5Min = trialOnsetElapsedMs === null
+        ? ""
+        : Math.min(4, Math.floor(trialOnsetElapsedMs / (5 * 60 * 1000)) + 1);
 
       dataRows.push({
         participant_id: participantId,
         session_start: sessionStartIso,
         phase,
         trial_index: trialIndex + 1,
+        trial_onset_iso: trialOnsetIso,
+        trial_onset_elapsed_ms: trialOnsetElapsedMs ?? "",
+        response_elapsed_ms: responseElapsedMs ?? "",
+        time_block_5min: timeBlock5Min,
         condition: trial.condition,
         word_zh: colorById[trial.word].zh,
         word_en: colorById[trial.word].en,
@@ -842,6 +866,10 @@
         "session_start",
         "phase",
         "trial_index",
+        "trial_onset_iso",
+        "trial_onset_elapsed_ms",
+        "response_elapsed_ms",
+        "time_block_5min",
         "condition",
         "word_zh",
         "word_en",
@@ -896,6 +924,14 @@
     async function startExperiment() {
       participantId = sanitizeId(participantInput.value) || fallbackId();
       participantInput.value = participantId;
+
+      const requestedMinutes = Number(testDurationInput.value);
+      const validMinutes = Number.isFinite(requestedMinutes)
+        ? Math.min(120, Math.max(1, requestedMinutes))
+        : 20;
+      testDurationInput.value = String(validMinutes);
+      currentTestDurationMs = validMinutes * 60 * 1000;
+
       sessionStartIso = new Date().toISOString();
       dataRows = [];
 
