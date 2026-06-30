@@ -186,11 +186,28 @@
     }
 
     #countdown {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
       display: none;
-      font-size: clamp(90px, 16vw, 180px);
+      align-items: center;
+      justify-content: center;
+      background: #050505;
+      color: #ffffff;
+      text-align: center;
+      user-select: none;
+    }
+
+    #countdown .countdown-phase {
+      margin-bottom: 28px;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+    }
+
+    #countdown .countdown-number {
+      font-size: clamp(140px, 26vw, 280px);
       font-weight: 900;
       line-height: 1;
-      user-select: none;
     }
 
 
@@ -665,7 +682,7 @@
 
     function clearTaskDisplay() {
       countdown.style.display = "none";
-      countdown.textContent = "";
+      countdown.innerHTML = "";
       fixation.style.display = "none";
       stimulus.textContent = "";
       stimulus.style.color = "";
@@ -675,17 +692,15 @@
     function runStartCountdown(phaseName, onComplete) {
       clearTaskDisplay();
       setButtonsEnabled(false);
-      countdown.style.display = "block";
+      countdown.style.display = "flex";
 
       let remaining = 3;
 
       const renderCountdown = () => {
         countdown.innerHTML = `
-          <div style="text-align:center;">
-            <div style="font-size:clamp(24px,4vw,42px);margin-bottom:22px;">
-              ${phaseName}即將開始
-            </div>
-            <div>${remaining}</div>
+          <div>
+            <div class="countdown-phase">${phaseName}即將開始</div>
+            <div class="countdown-number">${remaining}</div>
           </div>
         `;
       };
@@ -695,12 +710,12 @@
       const tick = () => {
         remaining -= 1;
 
-        if (remaining > 0) {
+        if (remaining >= 1) {
           renderCountdown();
           scheduleTimeout(tick, 1000);
         } else {
           countdown.style.display = "none";
-          countdown.textContent = "";
+          countdown.innerHTML = "";
           onComplete();
         }
       };
