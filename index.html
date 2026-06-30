@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>中文四色 Stroop（R/G/B/Y）</title>
+  <title>中文四色 Stroop（50/50 平衡區塊）</title>
   <style>
     :root {
       --bg: #050505;
@@ -43,7 +43,7 @@
     .screen.active { display: flex; }
 
     .panel {
-      width: min(900px, 96vw);
+      width: min(920px, 96vw);
       max-height: 94vh;
       overflow-y: auto;
       padding: 30px;
@@ -98,7 +98,7 @@
 
     .notice {
       margin: 18px 0;
-      padding: 11px 15px;
+      padding: 12px 15px;
       border-left: 4px solid var(--yellow);
       background: rgba(241, 223, 50, 0.07);
       color: var(--text);
@@ -171,18 +171,19 @@
       user-select: none;
     }
 
+    #live-feedback {
+      min-width: 180px;
+      text-align: right;
+      color: #dedede;
+      font-weight: 800;
+    }
+
     .task-main {
       display: grid;
       flex: 1;
       width: 100%;
       min-height: 0;
       place-items: center;
-    }
-
-    #fixation {
-      font-size: 80px;
-      font-weight: 300;
-      user-select: none;
     }
 
     #countdown {
@@ -210,7 +211,6 @@
       line-height: 1;
     }
 
-
     #stimulus {
       min-height: 1.2em;
       display: grid;
@@ -222,17 +222,24 @@
       user-select: none;
     }
 
-    #practice-feedback {
-      position: absolute;
-      inset: 52px 0 180px;
+    #trial-feedback {
+      min-height: 1.2em;
       display: none;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
+      place-items: center;
+      color: #ffffff;
       font-size: clamp(48px, 8vw, 88px);
       font-weight: 900;
-      text-shadow: 0 3px 18px #000;
-      pointer-events: none;
+      line-height: 1.15;
+      text-align: center;
+      user-select: none;
+    }
+
+    #trial-feedback small {
+      display: block;
+      margin-top: 12px;
+      color: #cfcfcf;
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 700;
     }
 
     .response-area {
@@ -264,13 +271,8 @@
       font-weight: 700;
     }
 
-    .color-btn:not(:disabled):hover {
+    .color-btn:hover {
       background: rgba(255, 255, 255, 0.08);
-    }
-
-    .color-btn:disabled {
-      cursor: default;
-      opacity: 0.42;
     }
 
     .summary-grid {
@@ -314,7 +316,6 @@
         padding: 0 12px 12px;
       }
       .color-btn { min-height: 84px; }
-      #practice-feedback { inset: 52px 0 190px; }
       .summary-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -323,10 +324,10 @@
 <body>
   <section id="start-screen" class="screen active">
     <div class="panel">
-      <h1>中文四色 Stroop</h1>
+      <h1>中文四色 Stroop（50% 一致／50% 不一致）</h1>
 
       <p>
-        畫面會出現「紅、綠、藍、黃」其中一個中文字。
+        畫面會出現「紅、綠、藍、黃」其中一個中文字，文字意義可能與字體顏色相同或不同。
         請<strong>忽略文字意思</strong>，只依照<strong>字體實際顏色</strong>作答。
       </p>
 
@@ -338,17 +339,18 @@
       </div>
 
       <ul>
-        <li>8 題練習，接著依上方設定時間進行正式測驗。</li>
-        <li>每題先呈現注視十字 500 ms，再空白 200 ms。</li>
-        <li>刺激最多呈現 1500 ms；作答後進入 1000–1200 ms 隨機空白間隔。</li>
-        <li>設定時間一到會自動停止並下載 CSV。</li>
-        <li>CSV 會同時包含逐題資料、整體摘要、一致／不一致條件摘要，以及每 5 分鐘區段摘要。</li>
-        <li>可直接點擊固定按鈕，亦可按 R／G／B／Y 鍵。</li>
-        <li>同一位受試者整場必須固定使用同一種作答方式。</li>
+        <li>先進行 8 題練習，再依設定時間進行正式測驗。</li>
+        <li>每題刺激固定呈現 1000 ms；提早作答不會提前結束刺激。</li>
+        <li>刺激結束後進入隨機刺激間隔：1100、1500 或 1900 ms，三種時長以隨機批次等比例出現。</li>
+        <li>刺激間隔期間顯示作答回饋；正式測驗逾時時不顯示文字，僅於 CSV 記錄。</li>
+        <li>每個 8 題區塊包含 4 題一致與 4 題不一致，區塊內完整刺激組合不重複。</li>
+        <li>相同完整刺激不得連續出現；完成一個區塊後才允許再次使用相同組合。</li>
+        <li>正式測驗預設 15 分鐘，可在下方修改。</li>
+        <li>可使用 R／G／B／Y 鍵或固定按鈕，但同一受試者整場應固定同一種方式。</li>
       </ul>
 
       <div class="notice">
-        正式測驗不提供逐題正誤回饋，以避免回饋改變後續作答策略；練習階段會提供回饋。
+        此版本採 50% 一致、50% 不一致的平衡區塊設計；不設注視十字與刺激前空白。刺激固定呈現 1000 ms，之後以 1100、1500 或 1900 ms 隨機間隔呈現回饋。
       </div>
 
       <div class="field">
@@ -358,7 +360,7 @@
 
       <div class="field">
         <label for="test-duration-minutes">正式測驗時間（分鐘）</label>
-        <input id="test-duration-minutes" type="number" min="1" max="120" step="1" value="20">
+        <input id="test-duration-minutes" type="number" min="1" max="120" step="1" value="15">
       </div>
 
       <div class="actions">
@@ -366,9 +368,8 @@
       </div>
 
       <div class="references">
-        設計依據：PsyToolkit 四色手動作答 Stroop（R/G/B/Y；8 題練習＋80 題正式）；
-        Ménétré &amp; Laganaro（2019）的 500 ms 注視、200 ms 空白、1500 ms 刺激與
-        1000–1200 ms 間隔；手動按鍵反應屬常見電腦化 Stroop 變體。
+        本程式採四色 Stroop 50% 一致／50% 不一致設計，刺激固定呈現 1000 ms，刺激間隔為 1100、1500 或 1900 ms。
+        題目以 8 題平衡區塊產生，區塊內完整刺激不重複，並禁止相鄰試次出現相同完整刺激。
       </div>
     </div>
   </section>
@@ -380,7 +381,7 @@
         接下來進入正式測驗。規則不變：
         <strong>忽略文字內容，只判斷字體顏色。</strong>
       </p>
-      <p>正式測驗不會顯示逐題正誤，請盡可能快速且正確地作答。</p>
+      <p>每題刺激固定呈現 1000 ms；刺激結束後顯示回饋，並於隨機間隔結束後立即換題。請盡可能快速且正確地作答。</p>
       <div class="actions">
         <button id="test-btn" class="primary">開始正式測驗</button>
       </div>
@@ -390,15 +391,14 @@
   <section id="task-screen" class="screen">
     <div class="task-topbar">
       <span id="phase-label">練習</span>
+      <span id="live-feedback"></span>
     </div>
 
     <div class="task-main">
       <div id="countdown" aria-live="assertive"></div>
-      <div id="fixation" aria-hidden="true">+</div>
       <div id="stimulus" aria-live="polite"></div>
+      <div id="trial-feedback" aria-live="assertive"></div>
     </div>
-
-    <div id="practice-feedback"></div>
 
     <div class="response-area" aria-label="顏色作答按鈕">
       <button class="color-btn red" data-color="red">R　紅<small>Red</small></button>
@@ -411,7 +411,7 @@
   <section id="end-screen" class="screen">
     <div class="panel">
       <h1>測驗完成</h1>
-      <p>正式資料已整理完成。CSV 同時包含逐題原始資料與常用統計摘要。</p>
+      <p>正式資料已整理完成，CSV 已自動下載。</p>
 
       <div class="summary-grid">
         <div class="metric">
@@ -423,16 +423,16 @@
           <div id="mean-value" class="metric-value">—</div>
         </div>
         <div class="metric">
-          <div class="metric-label">一致題平均時間</div>
-          <div id="congruent-value" class="metric-value">—</div>
+          <div class="metric-label">正確反應中位數</div>
+          <div id="median-value" class="metric-value">—</div>
         </div>
         <div class="metric">
-          <div class="metric-label">不一致題平均時間</div>
-          <div id="incongruent-value" class="metric-value">—</div>
+          <div class="metric-label">反應時間標準差</div>
+          <div id="sd-value" class="metric-value">—</div>
         </div>
         <div class="metric">
-          <div class="metric-label">Stroop 干擾量</div>
-          <div id="stroop-value" class="metric-value">—</div>
+          <div class="metric-label">錯誤題數</div>
+          <div id="error-value" class="metric-value">—</div>
         </div>
         <div class="metric">
           <div class="metric-label">逾時題數</div>
@@ -441,7 +441,7 @@
       </div>
 
       <div class="actions">
-        <button id="download-btn" class="primary">下載 CSV</button>
+        <button id="download-btn" class="primary">再次下載 CSV</button>
         <button id="restart-btn" class="secondary">重新開始</button>
       </div>
     </div>
@@ -450,40 +450,13 @@
   <script>
     "use strict";
 
-    /*
-      Literature-anchored Chinese four-color Stroop.
-
-      Structure and manual mapping:
-      - PsyToolkit Stroop: red, green, blue, yellow; R/G/B/Y keys.
-      - 8 practice trials followed by 80 formal trials.
-
-      Timing:
-      - 500 ms fixation
-      - 200 ms blank
-      - stimulus up to 1500 ms
-      - 1000–1200 ms variable blank response-stimulus interval
-
-      The timing is based on:
-      Ménétré, E., & Laganaro, M. (2019).
-      Attentional Reorientation and Inhibition Adjustment in a Verbal Stroop Task.
-      Frontiers in Psychology, 10, 2028.
-      https://doi.org/10.3389/fpsyg.2019.02028
-
-      Manual response is an established computerized Stroop variant.
-      This implementation is an adaptation rather than an exact replication
-      of one single published experiment.
-    */
-
     const CONFIG = Object.freeze({
       practiceTrials: 8,
-      testTrials: 80,
-      testDurationMs: 20 * 60 * 1000,
-      fixationMs: 500,
-      preStimulusBlankMs: 200,
-      responseDeadlineMs: 1500,
-      practiceFeedbackMs: 500,
-      rsiMinMs: 1000,
-      rsiMaxMs: 1200
+      stimulusBlockSize: 8,
+      defaultTestDurationMinutes: 15,
+      stimulusDurationMs: 1000,
+      interStimulusIntervalsMs: Object.freeze([1100, 1500, 1900]),
+      analysisBlockMs: 5 * 60 * 1000
     });
 
     const COLORS = Object.freeze([
@@ -506,10 +479,10 @@
     const participantInput = document.getElementById("participant-id");
     const testDurationInput = document.getElementById("test-duration-minutes");
     const phaseLabel = document.getElementById("phase-label");
+    const liveFeedback = document.getElementById("live-feedback");
     const countdown = document.getElementById("countdown");
-    const fixation = document.getElementById("fixation");
     const stimulus = document.getElementById("stimulus");
-    const practiceFeedback = document.getElementById("practice-feedback");
+    const trialFeedback = document.getElementById("trial-feedback");
     const responseButtons = [...document.querySelectorAll(".color-btn")];
 
     let participantId = "";
@@ -517,19 +490,25 @@
     let phase = "practice";
     let trials = [];
     let trialIndex = 0;
-    let awaitingResponse = false;
-    let stimulusOnset = 0;
-    let trialOnsetIso = "";
-    let trialOnsetElapsedMs = null;
-    let responseTimer = null;
-    let phaseTimer = null;
-    let pendingTimeouts = [];
-    let testStartTime = null;
-    let currentTestDurationMs = CONFIG.testDurationMs;
+    let currentTrial = null;
+    let currentTrialStartPerf = null;
+    let currentTrialStartIso = "";
+    let currentTrialElapsedMs = null;
+    let currentResponse = null;
+    let currentIsiMs = null;
+    let isiQueue = [];
+    let incongruentSetQueue = [];
+    let generatedStimulusBlockCount = 0;
+    let responseLocked = true;
+    let phaseStartPerf = null;
+    let phaseDeadlinePerf = null;
+    let currentTestDurationMs = CONFIG.defaultTestDurationMinutes * 60 * 1000;
     let dataRows = [];
+    let pendingTimeouts = [];
+    let experimentFinished = false;
 
     function scheduleTimeout(callback, delay) {
-      const timeoutId = window.setTimeout(callback, delay);
+      const timeoutId = window.setTimeout(callback, Math.max(0, delay));
       pendingTimeouts.push(timeoutId);
       return timeoutId;
     }
@@ -539,16 +518,15 @@
       pendingTimeouts = [];
     }
 
-    function clearPhaseTimer() {
-      if (phaseTimer !== null) {
-        window.clearTimeout(phaseTimer);
-        phaseTimer = null;
-      }
-    }
-
     function showScreen(name) {
       Object.values(screens).forEach(screen => screen.classList.remove("active"));
       screens[name].classList.add("active");
+    }
+
+    function setButtonsEnabled(enabled) {
+      responseButtons.forEach(button => {
+        button.disabled = !enabled;
+      });
     }
 
     function sanitizeId(value) {
@@ -570,128 +548,109 @@
       return result;
     }
 
-    function randomInteger(minimum, maximum) {
-      return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+    function nextInterStimulusInterval() {
+      if (!isiQueue.length) {
+        isiQueue = shuffle(CONFIG.interStimulusIntervalsMs);
+      }
+      return isiQueue.shift();
     }
 
-    function makeTrial(word, ink, condition) {
+    function makeTrial(word, ink) {
       return {
         word,
         ink,
-        condition,
-        correctResponse: ink
+        condition: word === ink ? "congruent" : "incongruent",
+        correctResponse: ink,
+        stimulusBlockIndex: null,
+        positionInStimulusBlock: null
       };
     }
 
-    function sequenceIsAcceptable(sequence) {
-      let sameInkRun = 1;
-      let sameConditionRun = 1;
+    function makeCongruentCombinations() {
+      return COLORS.map(color => makeTrial(color.id, color.id));
+    }
 
-      for (let index = 1; index < sequence.length; index++) {
-        const previous = sequence[index - 1];
-        const current = sequence[index];
+    function makeIncongruentSets() {
+      const ids = COLORS.map(color => color.id);
+      return [1, 2, 3].map(shift =>
+        ids.map((word, index) => makeTrial(word, ids[(index + shift) % ids.length]))
+      );
+    }
 
-        if (previous.word === current.word && previous.ink === current.ink) {
-          return false;
-        }
-
-        if (previous.ink === current.ink) {
-          sameInkRun += 1;
-          if (sameInkRun > 3) return false;
-        } else {
-          sameInkRun = 1;
-        }
-
-        if (previous.condition === current.condition) {
-          sameConditionRun += 1;
-          if (sameConditionRun > 4) return false;
-        } else {
-          sameConditionRun = 1;
-        }
+    function nextIncongruentSet() {
+      if (!incongruentSetQueue.length) {
+        incongruentSetQueue = shuffle(makeIncongruentSets());
       }
+      return incongruentSetQueue.shift();
+    }
 
+    function sameCompleteStimulus(first, second) {
+      return Boolean(first && second && first.word === second.word && first.ink === second.ink);
+    }
+
+    function sequenceIsAcceptable(sequence, previousTrial) {
+      if (previousTrial && sameCompleteStimulus(sequence[0], previousTrial)) return false;
+      for (let index = 1; index < sequence.length; index++) {
+        if (sameCompleteStimulus(sequence[index], sequence[index - 1])) return false;
+      }
       return true;
     }
 
-    function constrainedShuffle(items) {
-      for (let attempt = 0; attempt < 1000; attempt++) {
+    function shuffleStimulusBlock(items, previousTrial) {
+      for (let attempt = 0; attempt < 500; attempt++) {
         const candidate = shuffle(items);
-        if (sequenceIsAcceptable(candidate)) return candidate;
+        if (sequenceIsAcceptable(candidate, previousTrial)) return candidate;
       }
-      return shuffle(items);
+      const fallback = shuffle(items);
+      if (previousTrial && sameCompleteStimulus(fallback[0], previousTrial)) {
+        const swapIndex = fallback.findIndex((trial, index) => index > 0 && !sameCompleteStimulus(trial, previousTrial));
+        if (swapIndex > 0) [fallback[0], fallback[swapIndex]] = [fallback[swapIndex], fallback[0]];
+      }
+      return fallback;
+    }
+
+    function buildBalancedStimulusBlock(previousTrial = null) {
+      generatedStimulusBlockCount += 1;
+      const uniqueTrials = [
+        ...makeCongruentCombinations(),
+        ...nextIncongruentSet()
+      ];
+      const shuffledBlock = shuffleStimulusBlock(uniqueTrials, previousTrial);
+      return shuffledBlock.map((trial, index) => ({
+        ...trial,
+        stimulusBlockIndex: generatedStimulusBlockCount,
+        positionInStimulusBlock: index + 1
+      }));
     }
 
     function buildPracticeTrials() {
-      const result = [];
-
-      // Four congruent trials: one per color.
-      for (const color of COLORS) {
-        result.push(makeTrial(color.id, color.id, "congruent"));
-      }
-
-      // Four incongruent trials forming a balanced cycle.
-      result.push(makeTrial("red", "green", "incongruent"));
-      result.push(makeTrial("green", "blue", "incongruent"));
-      result.push(makeTrial("blue", "yellow", "incongruent"));
-      result.push(makeTrial("yellow", "red", "incongruent"));
-
-      return constrainedShuffle(result);
+      return buildBalancedStimulusBlock(null).slice(0, CONFIG.practiceTrials);
     }
 
-    function buildTestTrials() {
-      const result = [];
-
-      // 40 congruent trials: each color is the correct response 10 times.
-      for (const color of COLORS) {
-        for (let repeat = 0; repeat < 10; repeat++) {
-          result.push(makeTrial(color.id, color.id, "congruent"));
-        }
+    function nextGeneratedTrial() {
+      if (!trials.length || trialIndex >= trials.length) {
+        const previous = trials.at(-1) ?? null;
+        trials.push(...buildBalancedStimulusBlock(previous));
       }
-
-      /*
-        40 incongruent trials:
-        - all 12 possible word–ink mismatches occur three times = 36
-        - four additional trials form a derangement cycle
-        This keeps total word frequency and correct-response frequency balanced.
-      */
-      for (const word of COLORS) {
-        for (const ink of COLORS) {
-          if (word.id !== ink.id) {
-            for (let repeat = 0; repeat < 3; repeat++) {
-              result.push(makeTrial(word.id, ink.id, "incongruent"));
-            }
-          }
-        }
-      }
-
-      result.push(makeTrial("red", "green", "incongruent"));
-      result.push(makeTrial("green", "blue", "incongruent"));
-      result.push(makeTrial("blue", "yellow", "incongruent"));
-      result.push(makeTrial("yellow", "red", "incongruent"));
-
-      return constrainedShuffle(result);
-    }
-
-    function setButtonsEnabled(enabled) {
-      responseButtons.forEach(button => {
-        button.disabled = !enabled;
-      });
+      return trials[trialIndex];
     }
 
     function clearTaskDisplay() {
       countdown.style.display = "none";
       countdown.innerHTML = "";
-      fixation.style.display = "none";
       stimulus.textContent = "";
       stimulus.style.color = "";
-      practiceFeedback.style.display = "none";
+      stimulus.style.display = "grid";
+      trialFeedback.style.display = "none";
+      trialFeedback.innerHTML = "";
+      liveFeedback.textContent = "";
     }
 
     function runStartCountdown(phaseName, onComplete) {
       clearTaskDisplay();
+      responseLocked = true;
       setButtonsEnabled(false);
       countdown.style.display = "flex";
-
       let remaining = 3;
 
       const renderCountdown = () => {
@@ -704,10 +663,8 @@
       };
 
       renderCountdown();
-
       const tick = () => {
         remaining -= 1;
-
         if (remaining >= 1) {
           renderCountdown();
           scheduleTimeout(tick, 1000);
@@ -717,169 +674,214 @@
           onComplete();
         }
       };
-
       scheduleTimeout(tick, 1000);
     }
 
     function startPhase(nextPhase) {
+      clearPendingTimeouts();
+      experimentFinished = false;
       phase = nextPhase;
       trialIndex = 0;
-      clearPhaseTimer();
-      clearPendingTimeouts();
-      trials = phase === "practice" ? buildPracticeTrials() : buildTestTrials();
-      if (phase === "test") {
-        testStartTime = null;
-      }
+      currentTrial = null;
+      currentResponse = null;
+      currentIsiMs = null;
+      isiQueue = [];
+      incongruentSetQueue = [];
+      generatedStimulusBlockCount = 0;
+      responseLocked = true;
+
+      trials = phase === "practice"
+        ? buildPracticeTrials()
+        : [];
+
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
       showScreen("task");
-      const countdownPhaseName = phase === "practice" ? "練習" : "正式測驗";
 
-      runStartCountdown(countdownPhaseName, () => {
-        if (phase === "test") {
-          testStartTime = performance.now();
-          phaseTimer = scheduleTimeout(() => {
-            finishExperiment();
-          }, currentTestDurationMs);
-        }
+      runStartCountdown(phase === "practice" ? "練習" : "正式測驗", () => {
+        phaseStartPerf = performance.now();
+        phaseDeadlinePerf = phase === "test" ? phaseStartPerf + currentTestDurationMs : null;
         beginTrial();
       });
     }
 
     function beginTrial() {
-      if (trialIndex >= trials.length) {
-        if (phase === "practice") {
-          showScreen("transition");
-          return;
-        }
+      if (experimentFinished) return;
 
-        const elapsed = performance.now() - testStartTime;
-        if (elapsed < currentTestDurationMs) {
-          trials = trials.concat(buildTestTrials());
-        } else {
+      if (phase === "practice" && trialIndex >= CONFIG.practiceTrials) {
+        responseLocked = true;
+        setButtonsEnabled(false);
+        clearTaskDisplay();
+        showScreen("transition");
+        return;
+      }
+
+      if (phase === "test" && performance.now() >= phaseDeadlinePerf) {
+        finishExperiment();
+        return;
+      }
+
+      currentTrial = phase === "practice" ? trials[trialIndex] : nextGeneratedTrial();
+      currentResponse = null;
+      currentIsiMs = nextInterStimulusInterval();
+      responseLocked = false;
+      setButtonsEnabled(true);
+      liveFeedback.textContent = "";
+      trialFeedback.style.display = "none";
+      trialFeedback.innerHTML = "";
+      stimulus.style.display = "grid";
+
+      currentTrialStartPerf = performance.now();
+      currentTrialStartIso = new Date().toISOString();
+      currentTrialElapsedMs = phase === "test"
+        ? Math.round(currentTrialStartPerf - phaseStartPerf)
+        : null;
+
+      stimulus.textContent = colorById[currentTrial.word].zh;
+      stimulus.style.color = colorById[currentTrial.ink].hex;
+
+      const remainingExperimentMs = phase === "test"
+        ? Math.max(0, phaseDeadlinePerf - performance.now())
+        : CONFIG.stimulusDurationMs;
+      const visibleDuration = Math.min(CONFIG.stimulusDurationMs, remainingExperimentMs);
+
+      scheduleTimeout(() => {
+        if (phase === "test" && performance.now() >= phaseDeadlinePerf) {
           finishExperiment();
           return;
         }
-      }
-
-      clearTaskDisplay();
-      setButtonsEnabled(false);
-
-      fixation.style.display = "block";
-
-      scheduleTimeout(() => {
-        fixation.style.display = "none";
-
-        scheduleTimeout(() => {
-          presentStimulus();
-        }, CONFIG.preStimulusBlankMs);
-      }, CONFIG.fixationMs);
+        endStimulusAndShowFeedback();
+      }, visibleDuration);
     }
 
-    function presentStimulus() {
-      const trial = trials[trialIndex];
-
-      stimulus.textContent = colorById[trial.word].zh;
-      stimulus.style.color = colorById[trial.ink].hex;
-      setButtonsEnabled(true);
-
-      stimulusOnset = performance.now();
-      trialOnsetIso = new Date().toISOString();
-      trialOnsetElapsedMs = phase === "test" && testStartTime !== null
-        ? Math.round(stimulusOnset - testStartTime)
-        : null;
-      awaitingResponse = true;
-
-      responseTimer = scheduleTimeout(() => {
-        submitResponse(null, "timeout");
-      }, CONFIG.responseDeadlineMs);
+    function showFeedback(text, reactionTime = null) {
+      stimulus.textContent = "";
+      stimulus.style.color = "";
+      stimulus.style.display = "none";
+      trialFeedback.style.display = "grid";
+      trialFeedback.innerHTML = reactionTime === null
+        ? text
+        : `${text}<small>${reactionTime} ms</small>`;
+      liveFeedback.textContent = reactionTime === null ? text : `${text} ${reactionTime} ms`;
     }
 
-    function submitResponse(responseColor, inputMethod) {
-      if (!awaitingResponse) return;
-
-      awaitingResponse = false;
-      if (responseTimer !== null) {
-        window.clearTimeout(responseTimer);
-        responseTimer = null;
-      }
-      setButtonsEnabled(false);
-
-      const trial = trials[trialIndex];
-      const reactionTime = responseColor === null
-        ? null
-        : Math.round(performance.now() - stimulusOnset);
-      const correct = responseColor === trial.correctResponse;
-      const timedOut = responseColor === null;
-      const responseElapsedMs = phase === "test" && testStartTime !== null
-        ? Math.round(performance.now() - testStartTime)
-        : null;
-      const timeBlock5Min = trialOnsetElapsedMs === null
-        ? ""
-        : Math.floor(trialOnsetElapsedMs / (5 * 60 * 1000)) + 1;
+    function recordTrial({ responseColor, inputMethod, reactionTime, correct, timedOut }) {
+      const responseElapsedMs = phase === "test" && reactionTime !== null
+        ? currentTrialElapsedMs + reactionTime
+        : "";
+      const timeBlock5Min = phase === "test"
+        ? Math.floor(currentTrialElapsedMs / CONFIG.analysisBlockMs) + 1
+        : "";
 
       dataRows.push({
         participant_id: participantId,
         session_start: sessionStartIso,
         phase,
         trial_index: trialIndex + 1,
-        trial_onset_iso: trialOnsetIso,
-        trial_onset_elapsed_ms: trialOnsetElapsedMs ?? "",
-        response_elapsed_ms: responseElapsedMs ?? "",
+        trial_onset_iso: currentTrialStartIso,
+        trial_onset_elapsed_ms: currentTrialElapsedMs ?? "",
+        response_elapsed_ms: responseElapsedMs,
         time_block_5min: timeBlock5Min,
-        condition: trial.condition,
-        word_zh: colorById[trial.word].zh,
-        word_en: colorById[trial.word].en,
-        word_code: trial.word,
-        ink_zh: colorById[trial.ink].zh,
-        ink_en: colorById[trial.ink].en,
-        ink_code: trial.ink,
-        correct_key: colorById[trial.correctResponse].key.toUpperCase(),
+        stimulus_block_index: currentTrial.stimulusBlockIndex,
+        position_in_stimulus_block: currentTrial.positionInStimulusBlock,
+        condition: currentTrial.condition,
+        word_zh: colorById[currentTrial.word].zh,
+        word_en: colorById[currentTrial.word].en,
+        word_code: currentTrial.word,
+        ink_zh: colorById[currentTrial.ink].zh,
+        ink_en: colorById[currentTrial.ink].en,
+        ink_code: currentTrial.ink,
+        correct_key: colorById[currentTrial.correctResponse].key.toUpperCase(),
         response_zh: responseColor ? colorById[responseColor].zh : "",
         response_en: responseColor ? colorById[responseColor].en : "",
         response_key: responseColor ? colorById[responseColor].key.toUpperCase() : "",
         correct,
         rt_ms: reactionTime ?? "",
         timeout: timedOut,
-        input_method: inputMethod
+        input_method: inputMethod,
+        stimulus_duration_ms: CONFIG.stimulusDurationMs,
+        interstimulus_interval_ms: currentIsiMs
       });
-
-      stimulus.textContent = "";
-
-      if (phase === "practice") {
-        practiceFeedback.textContent = timedOut ? "請加快" : correct ? "正確" : "錯誤";
-        practiceFeedback.style.display = "flex";
-
-        scheduleTimeout(() => {
-          practiceFeedback.style.display = "none";
-          startResponseStimulusInterval();
-        }, CONFIG.practiceFeedbackMs);
-      } else {
-        startResponseStimulusInterval();
-      }
     }
 
-    function startResponseStimulusInterval() {
-      const interval = randomInteger(CONFIG.rsiMinMs, CONFIG.rsiMaxMs);
+    function endStimulusAndShowFeedback() {
+      if (experimentFinished || !currentTrial) return;
+
+      responseLocked = true;
+      setButtonsEnabled(false);
+
+      if (currentResponse === null) {
+        recordTrial({
+          responseColor: null,
+          inputMethod: "timeout",
+          reactionTime: null,
+          correct: false,
+          timedOut: true
+        });
+        if (phase === "practice") {
+          showFeedback("逾時");
+        } else {
+          // 正式測驗逾時時不顯示任何文字，但保留完整 CSV 紀錄。
+          stimulus.textContent = "";
+          stimulus.style.color = "";
+          stimulus.style.display = "none";
+          trialFeedback.style.display = "none";
+          trialFeedback.innerHTML = "";
+          liveFeedback.textContent = "";
+        }
+      } else {
+        recordTrial({
+          responseColor: currentResponse.responseColor,
+          inputMethod: currentResponse.inputMethod,
+          reactionTime: currentResponse.reactionTime,
+          correct: currentResponse.correct,
+          timedOut: false
+        });
+        showFeedback(currentResponse.correct ? "正確" : "錯誤", currentResponse.reactionTime);
+      }
 
       scheduleTimeout(() => {
+        currentTrial = null;
+        currentResponse = null;
         trialIndex += 1;
-        beginTrial();
-      }, interval);
+
+        if (phase === "test" && performance.now() >= phaseDeadlinePerf) {
+          finishExperiment();
+        } else {
+          beginTrial();
+        }
+      }, currentIsiMs);
+    }
+
+    function submitResponse(responseColor, inputMethod) {
+      if (responseLocked || !currentTrial || experimentFinished || currentResponse !== null) return;
+
+      const reactionTime = Math.round(performance.now() - currentTrialStartPerf);
+      if (reactionTime > CONFIG.stimulusDurationMs) return;
+
+      const correct = responseColor === currentTrial.correctResponse;
+      currentResponse = {
+        responseColor,
+        inputMethod,
+        reactionTime,
+        correct
+      };
+
+      // Only the first response is accepted. The stimulus remains visible
+      // until the fixed 1000 ms presentation period has ended.
+      responseLocked = true;
+      setButtonsEnabled(false);
     }
 
     function handleKeyboard(event) {
-      if (!screens.task.classList.contains("active") || !awaitingResponse) return;
-
+      if (!screens.task.classList.contains("active")) return;
       const color = colorByKey[event.key.toLowerCase()];
       if (!color) return;
-
       event.preventDefault();
       submitResponse(color, "keyboard");
     }
 
     function mean(values) {
-      if (!values.length) return null;
-      return values.reduce((sum, value) => sum + value, 0) / values.length;
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     }
 
     function median(values) {
@@ -894,9 +896,7 @@
     function sampleStandardDeviation(values) {
       if (values.length < 2) return null;
       const average = mean(values);
-      const variance = values.reduce((sum, value) => {
-        return sum + (value - average) ** 2;
-      }, 0) / (values.length - 1);
+      const variance = values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1);
       return Math.sqrt(variance);
     }
 
@@ -905,33 +905,19 @@
     }
 
     function linearSlope(points) {
-      const valid = points.filter(point =>
-        Number.isFinite(point.x) && Number.isFinite(point.y)
-      );
+      const valid = points.filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
       if (valid.length < 2) return null;
-
       const meanX = mean(valid.map(point => point.x));
       const meanY = mean(valid.map(point => point.y));
-      const numerator = valid.reduce((sum, point) => {
-        return sum + (point.x - meanX) * (point.y - meanY);
-      }, 0);
-      const denominator = valid.reduce((sum, point) => {
-        return sum + (point.x - meanX) ** 2;
-      }, 0);
-
+      const numerator = valid.reduce((sum, point) => sum + (point.x - meanX) * (point.y - meanY), 0);
+      const denominator = valid.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0);
       return denominator === 0 ? null : numerator / denominator;
     }
 
     function summarizeRows(rows) {
-      const correctRows = rows.filter(row => row.correct && row.rt_ms !== "");
-      const correctTimes = correctRows.map(row => Number(row.rt_ms));
-      const congruentTimes = correctRows
-        .filter(row => row.condition === "congruent")
+      const correctTimes = rows
+        .filter(row => row.correct && row.rt_ms !== "")
         .map(row => Number(row.rt_ms));
-      const incongruentTimes = correctRows
-        .filter(row => row.condition === "incongruent")
-        .map(row => Number(row.rt_ms));
-
       const totalTrials = rows.length;
       const correctCount = rows.filter(row => row.correct).length;
       const timeoutCount = rows.filter(row => row.timeout).length;
@@ -940,10 +926,6 @@
       const meanRt = mean(correctTimes);
       const medianRt = median(correctTimes);
       const sdRt = sampleStandardDeviation(correctTimes);
-      const meanCongruent = mean(congruentTimes);
-      const meanIncongruent = mean(incongruentTimes);
-      const medianCongruent = median(congruentTimes);
-      const medianIncongruent = median(incongruentTimes);
 
       return {
         total_trials: totalTrials,
@@ -962,58 +944,30 @@
         rt_cv_pct: meanRt && sdRt !== null ? sdRt / meanRt * 100 : null,
         inverse_efficiency_ms: meanRt !== null && accuracyPct > 0
           ? meanRt / (accuracyPct / 100)
-          : null,
-        congruent_mean_rt_ms: meanCongruent,
-        incongruent_mean_rt_ms: meanIncongruent,
-        stroop_effect_mean_ms: meanCongruent !== null && meanIncongruent !== null
-          ? meanIncongruent - meanCongruent
-          : null,
-        congruent_median_rt_ms: medianCongruent,
-        incongruent_median_rt_ms: medianIncongruent,
-        stroop_effect_median_ms: medianCongruent !== null && medianIncongruent !== null
-          ? medianIncongruent - medianCongruent
           : null
       };
     }
 
     function getFiveMinuteBlockSummaries(testRows) {
       const blockNumbers = [...new Set(
-        testRows
-          .map(row => Number(row.time_block_5min))
-          .filter(Number.isFinite)
+        testRows.map(row => Number(row.time_block_5min)).filter(Number.isFinite)
       )].sort((a, b) => a - b);
 
       return blockNumbers.map(blockNumber => ({
         blockNumber,
-        metrics: summarizeRows(
-          testRows.filter(row => Number(row.time_block_5min) === blockNumber)
-        )
+        metrics: summarizeRows(testRows.filter(row => Number(row.time_block_5min) === blockNumber))
       }));
-    }
-
-    function computeSummary() {
-      const testRows = dataRows.filter(row => row.phase === "test");
-      const overall = summarizeRows(testRows);
-
-      return {
-        accuracy: overall.accuracy_pct ?? 0,
-        meanAll: overall.mean_rt_ms,
-        meanCongruent: overall.congruent_mean_rt_ms,
-        meanIncongruent: overall.incongruent_mean_rt_ms,
-        stroopEffect: overall.stroop_effect_mean_ms,
-        timeoutCount: overall.timeout_count
-      };
     }
 
     function displaySummary(summary) {
       const formatMs = value => value === null ? "—" : `${Math.round(value)} ms`;
-
-      document.getElementById("accuracy-value").textContent = `${summary.accuracy.toFixed(1)}%`;
-      document.getElementById("mean-value").textContent = formatMs(summary.meanAll);
-      document.getElementById("congruent-value").textContent = formatMs(summary.meanCongruent);
-      document.getElementById("incongruent-value").textContent = formatMs(summary.meanIncongruent);
-      document.getElementById("stroop-value").textContent = formatMs(summary.stroopEffect);
-      document.getElementById("timeout-value").textContent = String(summary.timeoutCount);
+      document.getElementById("accuracy-value").textContent =
+        summary.accuracy_pct === null ? "—" : `${summary.accuracy_pct.toFixed(1)}%`;
+      document.getElementById("mean-value").textContent = formatMs(summary.mean_rt_ms);
+      document.getElementById("median-value").textContent = formatMs(summary.median_rt_ms);
+      document.getElementById("sd-value").textContent = formatMs(summary.sd_rt_ms);
+      document.getElementById("error-value").textContent = String(summary.commission_error_count);
+      document.getElementById("timeout-value").textContent = String(summary.timeout_count);
     }
 
     function csvEscape(value) {
@@ -1031,25 +985,18 @@
       const blockSummaries = getFiveMinuteBlockSummaries(testRows);
       const firstBlock = blockSummaries[0]?.metrics ?? null;
       const lastBlock = blockSummaries.at(-1)?.metrics ?? null;
-
-      const rtSlope = linearSlope(blockSummaries.map(item => ({
-        x: item.blockNumber,
-        y: item.metrics.mean_rt_ms
-      })));
-      const accuracySlope = linearSlope(blockSummaries.map(item => ({
-        x: item.blockNumber,
-        y: item.metrics.accuracy_pct
-      })));
+      const rtSlope = linearSlope(blockSummaries.map(item => ({ x: item.blockNumber, y: item.metrics.mean_rt_ms })));
+      const accuracySlope = linearSlope(blockSummaries.map(item => ({ x: item.blockNumber, y: item.metrics.accuracy_pct })));
 
       const commonMetadata = {
         participant_id: participantId,
         session_start: sessionStartIso,
         configured_test_duration_min: currentTestDurationMs / 60000,
-        fixation_ms: CONFIG.fixationMs,
-        pre_stimulus_blank_ms: CONFIG.preStimulusBlankMs,
-        response_deadline_ms: CONFIG.responseDeadlineMs,
-        rsi_min_ms: CONFIG.rsiMinMs,
-        rsi_max_ms: CONFIG.rsiMaxMs
+        stimulus_duration_ms: CONFIG.stimulusDurationMs,
+        interstimulus_interval_options_ms: CONFIG.interStimulusIntervalsMs.join("|"),
+        trial_timing_mode: "fixed_1000ms_stimulus_then_random_isi_feedback",
+        stimulus_design: "50_percent_congruent_50_percent_incongruent_unique_8_trial_blocks",
+        response_rule: "respond_to_ink_color"
       };
 
       const trialRows = dataRows.map((row, index) => ({
@@ -1060,11 +1007,11 @@
         trial_index: row.trial_index,
         trial_onset_iso: row.trial_onset_iso,
         trial_onset_elapsed_ms: row.trial_onset_elapsed_ms,
-        elapsed_minute: row.trial_onset_elapsed_ms === ""
-          ? ""
-          : roundForCsv(Number(row.trial_onset_elapsed_ms) / 60000, 4),
+        elapsed_minute: row.trial_onset_elapsed_ms === "" ? "" : roundForCsv(Number(row.trial_onset_elapsed_ms) / 60000, 4),
         response_elapsed_ms: row.response_elapsed_ms,
         time_block_5min: row.time_block_5min,
+        stimulus_block_index: row.stimulus_block_index,
+        position_in_stimulus_block: row.position_in_stimulus_block,
         condition: row.condition,
         word_zh: row.word_zh,
         word_en: row.word_en,
@@ -1082,7 +1029,9 @@
         valid_correct_rt: row.correct && row.rt_ms !== "" ? 1 : 0,
         timeout: row.timeout,
         error_type: row.timeout ? "omission_timeout" : row.correct ? "correct" : "commission_error",
-        input_method: row.input_method
+        input_method: row.input_method,
+        stimulus_duration_ms: row.stimulus_duration_ms,
+        interstimulus_interval_ms: row.interstimulus_interval_ms
       }));
 
       function makeSummaryRow(scope, value, metrics, extra = {}) {
@@ -1091,36 +1040,46 @@
           ...commonMetadata,
           summary_scope: scope,
           summary_value: value,
-          ...Object.fromEntries(
-            Object.entries(metrics).map(([key, metricValue]) => [key, roundForCsv(metricValue)])
-          ),
+          ...Object.fromEntries(Object.entries(metrics).map(([key, metricValue]) => [key, roundForCsv(metricValue)])),
           ...extra,
           analysis_note: "RT statistics use correct non-timeout trials only; sd_rt_ms is sample SD; inverse_efficiency_ms = mean RT / accuracy proportion."
         };
       }
 
       const overallMetrics = summarizeRows(testRows);
+      const congruentMetrics = summarizeRows(testRows.filter(row => row.condition === "congruent"));
+      const incongruentMetrics = summarizeRows(testRows.filter(row => row.condition === "incongruent"));
+      const stroopEffectMeanMs = congruentMetrics.mean_rt_ms !== null && incongruentMetrics.mean_rt_ms !== null
+        ? incongruentMetrics.mean_rt_ms - congruentMetrics.mean_rt_ms
+        : null;
+      const stroopEffectMedianMs = congruentMetrics.median_rt_ms !== null && incongruentMetrics.median_rt_ms !== null
+        ? incongruentMetrics.median_rt_ms - congruentMetrics.median_rt_ms
+        : null;
+      const accuracyInterferencePct = congruentMetrics.accuracy_pct !== null && incongruentMetrics.accuracy_pct !== null
+        ? incongruentMetrics.accuracy_pct - congruentMetrics.accuracy_pct
+        : null;
+
       const summaryRows = [
         makeSummaryRow("overall", "all_test_trials", overallMetrics, {
+          actual_test_trial_count: testRows.length,
+          congruent_mean_rt_ms: roundForCsv(congruentMetrics.mean_rt_ms),
+          incongruent_mean_rt_ms: roundForCsv(incongruentMetrics.mean_rt_ms),
+          stroop_effect_mean_ms: roundForCsv(stroopEffectMeanMs),
+          congruent_median_rt_ms: roundForCsv(congruentMetrics.median_rt_ms),
+          incongruent_median_rt_ms: roundForCsv(incongruentMetrics.median_rt_ms),
+          stroop_effect_median_ms: roundForCsv(stroopEffectMedianMs),
+          congruent_accuracy_pct: roundForCsv(congruentMetrics.accuracy_pct),
+          incongruent_accuracy_pct: roundForCsv(incongruentMetrics.accuracy_pct),
+          accuracy_interference_pct: roundForCsv(accuracyInterferencePct),
           rt_slope_ms_per_5min_block: roundForCsv(rtSlope),
           accuracy_slope_pct_per_5min_block: roundForCsv(accuracySlope),
-          first_last_mean_rt_change_ms: firstBlock && lastBlock
-            ? roundForCsv(lastBlock.mean_rt_ms - firstBlock.mean_rt_ms)
-            : "",
-          first_last_accuracy_change_pct: firstBlock && lastBlock
-            ? roundForCsv(lastBlock.accuracy_pct - firstBlock.accuracy_pct)
-            : ""
+          first_last_mean_rt_change_ms: firstBlock && lastBlock && firstBlock.mean_rt_ms !== null && lastBlock.mean_rt_ms !== null
+            ? roundForCsv(lastBlock.mean_rt_ms - firstBlock.mean_rt_ms) : "",
+          first_last_accuracy_change_pct: firstBlock && lastBlock && firstBlock.accuracy_pct !== null && lastBlock.accuracy_pct !== null
+            ? roundForCsv(lastBlock.accuracy_pct - firstBlock.accuracy_pct) : ""
         }),
-        makeSummaryRow(
-          "condition",
-          "congruent",
-          summarizeRows(testRows.filter(row => row.condition === "congruent"))
-        ),
-        makeSummaryRow(
-          "condition",
-          "incongruent",
-          summarizeRows(testRows.filter(row => row.condition === "incongruent"))
-        ),
+        makeSummaryRow("condition", "congruent", congruentMetrics),
+        makeSummaryRow("condition", "incongruent", incongruentMetrics),
         ...blockSummaries.map(item => makeSummaryRow(
           "time_block_5min",
           String(item.blockNumber),
@@ -1137,79 +1096,28 @@
 
     function createCsv() {
       const columns = [
-        "row_type",
-        "participant_id",
-        "session_start",
-        "configured_test_duration_min",
-        "fixation_ms",
-        "pre_stimulus_blank_ms",
-        "response_deadline_ms",
-        "rsi_min_ms",
-        "rsi_max_ms",
-        "phase",
-        "global_trial_index",
-        "trial_index",
-        "trial_onset_iso",
-        "trial_onset_elapsed_ms",
-        "elapsed_minute",
-        "response_elapsed_ms",
-        "time_block_5min",
-        "condition",
-        "word_zh",
-        "word_en",
-        "word_code",
-        "ink_zh",
-        "ink_en",
-        "ink_code",
-        "correct_key",
-        "response_zh",
-        "response_en",
-        "response_key",
-        "correct",
-        "correct_numeric",
-        "rt_ms",
-        "valid_correct_rt",
-        "timeout",
-        "error_type",
-        "input_method",
-        "summary_scope",
-        "summary_value",
-        "block_start_min",
-        "block_end_min",
-        "total_trials",
-        "correct_count",
-        "commission_error_count",
-        "timeout_count",
-        "accuracy_pct",
-        "commission_error_rate_pct",
-        "timeout_rate_pct",
-        "valid_correct_rt_count",
-        "mean_rt_ms",
-        "median_rt_ms",
-        "sd_rt_ms",
-        "min_rt_ms",
-        "max_rt_ms",
-        "rt_cv_pct",
-        "inverse_efficiency_ms",
-        "congruent_mean_rt_ms",
-        "incongruent_mean_rt_ms",
-        "stroop_effect_mean_ms",
-        "congruent_median_rt_ms",
-        "incongruent_median_rt_ms",
-        "stroop_effect_median_ms",
-        "rt_slope_ms_per_5min_block",
-        "accuracy_slope_pct_per_5min_block",
-        "first_last_mean_rt_change_ms",
-        "first_last_accuracy_change_pct",
-        "analysis_note"
+        "row_type", "participant_id", "session_start", "configured_test_duration_min",
+        "stimulus_duration_ms", "interstimulus_interval_options_ms", "trial_timing_mode", "stimulus_design", "response_rule",
+        "phase", "global_trial_index", "trial_index", "trial_onset_iso", "trial_onset_elapsed_ms",
+        "elapsed_minute", "response_elapsed_ms", "time_block_5min", "stimulus_block_index", "position_in_stimulus_block", "condition",
+        "word_zh", "word_en", "word_code", "ink_zh", "ink_en", "ink_code", "correct_key",
+        "response_zh", "response_en", "response_key", "correct", "correct_numeric", "rt_ms",
+        "valid_correct_rt", "timeout", "error_type", "input_method", "interstimulus_interval_ms", "summary_scope", "summary_value",
+        "block_start_min", "block_end_min", "actual_test_trial_count", "total_trials", "correct_count",
+        "commission_error_count", "timeout_count", "accuracy_pct", "commission_error_rate_pct",
+        "timeout_rate_pct", "valid_correct_rt_count", "mean_rt_ms", "median_rt_ms", "sd_rt_ms",
+        "min_rt_ms", "max_rt_ms", "rt_cv_pct", "inverse_efficiency_ms",
+        "congruent_mean_rt_ms", "incongruent_mean_rt_ms", "stroop_effect_mean_ms",
+        "congruent_median_rt_ms", "incongruent_median_rt_ms", "stroop_effect_median_ms",
+        "congruent_accuracy_pct", "incongruent_accuracy_pct", "accuracy_interference_pct",
+        "rt_slope_ms_per_5min_block", "accuracy_slope_pct_per_5min_block",
+        "first_last_mean_rt_change_ms", "first_last_accuracy_change_pct", "analysis_note"
       ];
 
-      const analysisRows = createAnalysisRows();
       const rows = [
         columns.map(csvEscape).join(","),
-        ...analysisRows.map(row => columns.map(column => csvEscape(row[column])).join(","))
+        ...createAnalysisRows().map(row => columns.map(column => csvEscape(row[column])).join(","))
       ];
-
       return "\uFEFF" + rows.join("\r\n");
     }
 
@@ -1219,9 +1127,8 @@
       const link = document.createElement("a");
       const safeId = sanitizeId(participantId) || "participant";
       const timestamp = new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
-
       link.href = url;
-      link.download = `stroop_zh_RGBY_analysis_${safeId}_${timestamp}.csv`;
+      link.download = `stroop_50_50_unique_blocks_${safeId}_${timestamp}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1229,14 +1136,17 @@
     }
 
     function finishExperiment() {
-      awaitingResponse = false;
+      if (experimentFinished) return;
+      experimentFinished = true;
+      responseLocked = true;
       setButtonsEnabled(false);
-      clearPhaseTimer();
       clearPendingTimeouts();
-      displaySummary(computeSummary());
+      currentTrial = null;
+      clearTaskDisplay();
+      const summary = summarizeRows(dataRows.filter(row => row.phase === "test"));
+      displaySummary(summary);
       showScreen("end");
-
-      scheduleTimeout(downloadCsv, 300);
+      window.setTimeout(downloadCsv, 300);
     }
 
     async function startExperiment() {
@@ -1245,18 +1155,16 @@
 
       const requestedMinutes = Number(testDurationInput.value);
       const validMinutes = Number.isFinite(requestedMinutes)
-        ? Math.min(120, Math.max(1, requestedMinutes))
-        : 20;
+        ? Math.min(120, Math.max(1, Math.round(requestedMinutes)))
+        : CONFIG.defaultTestDurationMinutes;
+
       testDurationInput.value = String(validMinutes);
       currentTestDurationMs = validMinutes * 60 * 1000;
-
       sessionStartIso = new Date().toISOString();
       dataRows = [];
 
       try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        }
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       } catch (_) {
         // Full-screen permission is optional.
       }
@@ -1265,9 +1173,7 @@
     }
 
     responseButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        submitResponse(button.dataset.color, "mouse_or_touch");
-      });
+      button.addEventListener("click", () => submitResponse(button.dataset.color, "mouse_or_touch"));
     });
 
     document.getElementById("start-btn").addEventListener("click", startExperiment);
@@ -1275,7 +1181,6 @@
     document.getElementById("download-btn").addEventListener("click", downloadCsv);
     document.getElementById("restart-btn").addEventListener("click", () => window.location.reload());
     document.addEventListener("keydown", handleKeyboard);
-
     setButtonsEnabled(false);
   </script>
 </body>
