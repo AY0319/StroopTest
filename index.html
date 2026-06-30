@@ -390,7 +390,6 @@
   <section id="task-screen" class="screen">
     <div class="task-topbar">
       <span id="phase-label">練習</span>
-      <span id="progress-label">0 / 0</span>
     </div>
 
     <div class="task-main">
@@ -507,7 +506,6 @@
     const participantInput = document.getElementById("participant-id");
     const testDurationInput = document.getElementById("test-duration-minutes");
     const phaseLabel = document.getElementById("phase-label");
-    const progressLabel = document.getElementById("progress-label");
     const countdown = document.getElementById("countdown");
     const fixation = document.getElementById("fixation");
     const stimulus = document.getElementById("stimulus");
@@ -733,7 +731,6 @@
         testStartTime = null;
       }
       phaseLabel.textContent = phase === "practice" ? "練習" : "正式測驗";
-      progressLabel.textContent = "";
       showScreen("task");
       const countdownPhaseName = phase === "practice" ? "練習" : "正式測驗";
 
@@ -764,7 +761,6 @@
         }
       }
 
-      progressLabel.textContent = `${trialIndex + 1} / ${trials.length}`;
       clearTaskDisplay();
       setButtonsEnabled(false);
 
